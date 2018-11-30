@@ -19,7 +19,7 @@ func TestNewRelationship(t *testing.T) {
 		want    *Relationship
 		wantErr bool
 	}{
-		{"new", args{"fakeId", "fakeType", "fakeTarget"}, &Relationship{"fakeId", "fakeType", "fakeTarget"}, false},
+		{"new", args{"fakeId", "fakeType", "fakeTarget"}, &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, false},
 		{"invalidTarget", args{"fakeId", "fakeType", ""}, nil, true},
 		{"invalidTarget2", args{"fakeId", "fakeType", "."}, nil, true},
 	}
@@ -43,7 +43,7 @@ func TestRelationship_ID(t *testing.T) {
 		r    *Relationship
 		want string
 	}{
-		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget"}, "fakeId"},
+		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, "fakeId"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -60,7 +60,7 @@ func TestRelationship_Type(t *testing.T) {
 		r    *Relationship
 		want string
 	}{
-		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget"}, "fakeType"},
+		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, "fakeType"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestRelationship_TargetPartURI(t *testing.T) {
 		r    *Relationship
 		want string
 	}{
-		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget"}, "fakeTarget"},
+		{"id", &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, "fakeTarget"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -95,9 +95,10 @@ func TestRelationship_WriteToXML(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"xmlWriter", &Relationship{"fakeId", "fakeType", "fakeTarget"}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
-		{"emptyURI", &Relationship{"fakeId", "fakeType", ""}, `<Relationship Id="fakeId" Type="fakeType" Target="/"></Relationship>`, false},
-		{"base", &Relationship{"fakeId", "fakeType", "/fakeTarget"}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
+		{"xmlWriter", &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
+		{"emptyURI", &Relationship{"fakeId", "fakeType", "", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/"></Relationship>`, false},
+		{"externalMode", &Relationship{"fakeId", "fakeType", "fakeTarget", ModeExternal}, `<Relationship Id="fakeId" Type="fakeType" Target="fakeTarget" TargetMode="External"></Relationship>`, false},
+		{"base", &Relationship{"fakeId", "fakeType", "/fakeTarget", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,6 +111,35 @@ func TestRelationship_WriteToXML(t *testing.T) {
 			got := buff.String()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Relationship.WriteToXML() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewRelationshipMode(t *testing.T) {
+	type args struct {
+		id            string
+		relType       string
+		targetPartURI string
+		mode          TargetMode
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *Relationship
+		wantErr bool
+	}{
+		{"new", args{"fakeId", "fakeType", "fakeTarget", ModeExternal}, &Relationship{"fakeId", "fakeType", "fakeTarget", ModeExternal}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewRelationshipMode(tt.args.id, tt.args.relType, tt.args.targetPartURI, tt.args.mode)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewRelationshipMode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewRelationshipMode() = %v, want %v", got, tt.want)
 			}
 		})
 	}
