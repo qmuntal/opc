@@ -20,8 +20,6 @@ func TestNewRelationship(t *testing.T) {
 		wantErr bool
 	}{
 		{"new", args{"fakeId", "fakeType", "fakeTarget"}, &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, false},
-		{"invalidTarget", args{"fakeId", "fakeType", ""}, nil, true},
-		{"invalidTarget2", args{"fakeId", "fakeType", "."}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -130,6 +128,8 @@ func TestNewRelationshipMode(t *testing.T) {
 		wantErr bool
 	}{
 		{"new", args{"fakeId", "fakeType", "fakeTarget", ModeExternal}, &Relationship{"fakeId", "fakeType", "fakeTarget", ModeExternal}, false},
+		{"invalidTarget", args{"fakeId", "fakeType", "", ModeInternal}, nil, true},
+		{"invalidTarget2", args{"fakeId", "fakeType", ".", ModeInternal}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
