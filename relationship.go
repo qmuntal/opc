@@ -5,12 +5,13 @@ import (
 	"errors"
 )
 
-//
+// TargetMode is an enumerable for the different target modes.
 type TargetMode int
 
-//
 const (
+	// ModeInternal when the target mode is Internal (default value)
 	ModeInternal TargetMode = iota
+	// ModeExternal when the target mode is External
 	ModeExternal
 )
 
@@ -42,7 +43,7 @@ func NewRelationship(id, relType, targetPartURI string) (*Relationship, error) {
 	return NewRelationshipMode(id, relType, targetPartURI, ModeInternal)
 }
 
-// NewRelationship creates a new relationship.
+// NewRelationshipMode creates a new relationship.
 func NewRelationshipMode(id, relType, targetPartURI string, mode TargetMode) (*Relationship, error) {
 	if len(targetPartURI) == 0 || targetPartURI[0] == '.' {
 		return nil, ErrInvalidOPCPartURI
