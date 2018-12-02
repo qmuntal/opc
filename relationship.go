@@ -11,9 +11,11 @@ import (
 type TargetMode int
 
 const (
-	// ModeInternal when the target targetMode is Internal (default value)
+	// ModeInternal when the target targetMode is Internal (default value).
+	// Target points to a part within the package and target uri must be relative.
 	ModeInternal TargetMode = iota
-	// ModeExternal when the target targetMode is External
+	// ModeExternal when the target targetMode is External.
+	// Target points to an external resource and target uri can be relative or absolute.
 	ModeExternal
 )
 
