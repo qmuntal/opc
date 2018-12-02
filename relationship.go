@@ -113,7 +113,7 @@ func (r *Relationship) toXML() *relationshipXML {
 	return x
 }
 
-// WriteToXML encodes the relationship to the target.
-func (r *Relationship) WriteToXML(e *xml.Encoder) error {
+// writeToXML encodes the relationship to the target.
+func (r *Relationship) writeToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
 }

@@ -58,7 +58,7 @@ func TestRelationship_TargetURI(t *testing.T) {
 	}
 }
 
-func TestRelationship_WriteToXML(t *testing.T) {
+func TestRelationship_writeToXML(t *testing.T) {
 	tests := []struct {
 		name    string
 		r       *Relationship
@@ -74,13 +74,13 @@ func TestRelationship_WriteToXML(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buff := bytes.NewBufferString("")
 			encoder := xml.NewEncoder(buff)
-			if err := tt.r.WriteToXML(encoder); (err != nil) != tt.wantErr {
-				t.Errorf("Relationship.WriteToXML() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tt.r.writeToXML(encoder); (err != nil) != tt.wantErr {
+				t.Errorf("Relationship.writeToXML() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			got := buff.String()
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Relationship.WriteToXML() = %v, want %v", got, tt.want)
+				t.Errorf("Relationship.writeToXML() = %v, want %v", got, tt.want)
 			}
 		})
 	}
