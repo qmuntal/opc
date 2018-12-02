@@ -49,8 +49,8 @@ var (
 )
 
 var (
-	// RelTypeCoreProps defines a core properties relationship.
-	RelTypeCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+	// RelTypeMetaDataCoreProps defines a core properties relationship.
+	RelTypeMetaDataCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
 	// RelTypeDigitalSignature defines a digital signature relationship.
 	RelTypeDigitalSignature = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/signature"
 	// RelTypeDigitalSignatureOrigin defines a digital signature origin relationship.
