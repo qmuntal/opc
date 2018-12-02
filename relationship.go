@@ -19,15 +19,15 @@ const (
 	ModeExternal
 )
 
-const relationshipName = "relationship"
+const relationshipName = "Relationship"
 const externalMode = "External"
 
-// relationship is used to express a relationship between a source and a target part.
-// The only way to create a relationship, is to call the Part.NewRelationship()
+// Relationship is used to express a relationship between a source and a target part.
+// The only way to create a Relationship, is to call the Part.NewRelationship()
 // or Package.NewRelationship(). A relationship is owned by a part or by the package itself.
 // If the source part is deleted all the relationships it owns are also deleted.
 // A target of the relationship need not be present.
-type relationship struct {
+type Relationship struct {
 	id         string
 	relType    string
 	targetURI  string
@@ -63,8 +63,13 @@ var (
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 
-// newRelationship creates a new relationship.
-func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*relationship, error) {
+// NewRelationship creates a new internal relationship.
+func NewRelationship(id, relType, targetURI string) (*Relationship, error) {
+	return NewRelationshipMode(id, relType, targetURI, ModeInternal)
+}
+
+// NewRelationshipMode creates a new relationship.
+func NewRelationshipMode(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
 	if strings.TrimSpace(targetURI) == "" {
 		return nil, ErrInvalidTargetURI
 	}
@@ -82,25 +87,25 @@ func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*rel
 		return nil, ErrRelationshipInternalAbs
 	}
 
-	return &relationship{id: id, relType: relType, targetURI: targetURI, targetMode: targetMode}, nil
+	return &Relationship{id: id, relType: relType, targetURI: targetURI, targetMode: targetMode}, nil
 }
 
 // ID returns the ID of the relationship.
-func (r *relationship) ID() string {
+func (r *Relationship) ID() string {
 	return r.id
 }
 
 // Type returns the type of the relationship.
-func (r *relationship) Type() string {
+func (r *Relationship) Type() string {
 	return r.relType
 }
 
 // targetURI returns the targetURI of the relationship.
-func (r *relationship) TargetURI() string {
+func (r *Relationship) TargetURI() string {
 	return r.targetURI
 }
 
-func (r *relationship) toXML() *relationshipXML {
+func (r *Relationship) toXML() *relationshipXML {
 	var targetMode string
 	if r.targetMode == ModeExternal {
 		targetMode = externalMode
@@ -114,6 +119,7 @@ func (r *relationship) toXML() *relationshipXML {
 	return x
 }
 
-func (r *relationship) writeToXML(e *xml.Encoder) error {
+// WriteToXML encodes the relationship to the target.
+func (r *Relationship) WriteToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
 }
