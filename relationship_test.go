@@ -7,34 +7,6 @@ import (
 	"testing"
 )
 
-func TestNewRelationship(t *testing.T) {
-	type args struct {
-		id        string
-		relType   string
-		targetURI string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Relationship
-		wantErr bool
-	}{
-		{"new", args{"fakeId", "fakeType", "fakeTarget"}, &Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewRelationship(tt.args.id, tt.args.relType, tt.args.targetURI)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewRelationship() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewRelationship() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestRelationship_ID(t *testing.T) {
 	tests := []struct {
 		name string
@@ -114,7 +86,7 @@ func TestRelationship_WriteToXML(t *testing.T) {
 	}
 }
 
-func TestNewRelationshipMode(t *testing.T) {
+func Test_newRelationship(t *testing.T) {
 	type args struct {
 		id         string
 		relType    string
@@ -138,13 +110,13 @@ func TestNewRelationshipMode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewRelationshipMode(tt.args.id, tt.args.relType, tt.args.targetURI, tt.args.targetMode)
+			got, err := newRelationship(tt.args.id, tt.args.relType, tt.args.targetURI, tt.args.targetMode)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewRelationshipMode() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("newRelationship() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewRelationshipMode() = %v, want %v", got, tt.want)
+				t.Errorf("newRelationship() = %v, want %v", got, tt.want)
 			}
 		})
 	}

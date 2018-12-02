@@ -63,13 +63,7 @@ var (
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 
-// NewRelationship creates a new internal relationship.
-func NewRelationship(id, relType, targetURI string) (*Relationship, error) {
-	return NewRelationshipMode(id, relType, targetURI, ModeInternal)
-}
-
-// NewRelationshipMode creates a new relationship.
-func NewRelationshipMode(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
+func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
 	if strings.TrimSpace(targetURI) == "" {
 		return nil, ErrInvalidTargetURI
 	}
