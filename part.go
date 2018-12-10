@@ -40,16 +40,16 @@ func newPart(uri string) (*Part, error) {
 //func newPart(uri, contentType string, compressionOption CompressionOption) {}
 
 // AddRelationship add a relationship to the part.
-func (p *Part) AddRelationship(id, reltype, uri string) error {
+func (p *Part) AddRelationship(id, reltype, uri string) (*Part, error) {
 	r, err := newRelationship(id, reltype, uri, ModeInternal)
 
 	for i := 0; i < len(p.relationships); i++ {
 		if p.relationships[i].ID() == id && p.relationships[i].Type() == reltype {
-			return ErrDuplicatedRelationship
+			return nil, ErrDuplicatedRelationship
 		}
 	}
 	p.relationships = append(p.relationships, r)
-	return err
+	return p, err
 }
 
 // HasRelationship return true if the part have relationships
