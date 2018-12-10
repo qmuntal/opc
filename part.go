@@ -18,26 +18,27 @@ const (
 	CompressionSuperFast
 )
 
-// Part defines an OPC Package Object.
-type Part struct {
-	uri           string
-	relationships []*Relationship
-}
-
 var (
 	// ErrDuplicatedRelationship throw error for invalid relationship.
 	ErrDuplicatedRelationship = errors.New("a relationship is duplicated")
 )
 
-// NewPart creates a new part.
-func newPart(uri string) (*Part, error) {
+// Part defines an OPC Package Object.
+type Part struct {
+	uri               string
+	contentType       string
+	compressionOption CompressionOption
+	relationships     []*Relationship
+}
+
+// newPart creates a new part with no relationships.
+func newPart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
 	if len(uri) == 0 {
 		return nil, ErrInvalidTargetURI
 	}
-	return &Part{uri: uri}, nil
-}
 
-//func newPart(uri, contentType string, compressionOption CompressionOption) {}
+	return &Part{uri: uri, contentType: contentType, compressionOption: compressionOption}, nil
+}
 
 // AddRelationship add a relationship to the part.
 func (p *Part) AddRelationship(id, reltype, uri string) (*Part, error) {
@@ -65,4 +66,15 @@ func (p *Part) Relationships() []*Relationship {
 // URI returns the URI of the part.
 func (p *Part) URI() string {
 	return p.uri
+}
+
+// ContentType returns the ContentType of the part.
+func (p *Part) ContentType() string {
+	return p.contentType
+}
+
+// CompressionOption returns the CompressionOption of the part.
+func (p *Part) CompressionOption() CompressionOption {
+
+	return p.compressionOption
 }
