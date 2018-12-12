@@ -94,7 +94,7 @@ func (r *Relationship) Type() string {
 	return r.relType
 }
 
-// targetURI returns the targetURI of the relationship.
+// TargetURI returns the targetURI of the relationship.
 func (r *Relationship) TargetURI() string {
 	return r.targetURI
 }

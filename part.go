@@ -75,6 +75,5 @@ func (p *Part) ContentType() string {
 
 // CompressionOption returns the CompressionOption of the part.
 func (p *Part) CompressionOption() CompressionOption {
-
 	return p.compressionOption
 }

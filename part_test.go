@@ -88,6 +88,7 @@ func TestPart_Relationships(t *testing.T) {
 		p    *Part
 		want []*Relationship
 	}{
+		{"base", &Part{"fakeUri", "fakeContentType", CompressionNone, make([]*Relationship, 0)}, make([]*Relationship, 0)},
 		{"partRelationship", &Part{"fakeUri", "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}},
 	}
 	for _, tt := range tests {
@@ -105,6 +106,7 @@ func TestPart_URI(t *testing.T) {
 		p    *Part
 		want string
 	}{
+		{"base", new(Part), ""},
 		{"partURI", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, "fakeUri"},
 	}
 	for _, tt := range tests {
@@ -122,6 +124,7 @@ func TestPart_ContentType(t *testing.T) {
 		p    *Part
 		want string
 	}{
+		{"base", new(Part), ""},
 		{"partContentType", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, "fakeContentType"},
 	}
 	for _, tt := range tests {
@@ -139,7 +142,9 @@ func TestPart_CompressionOption(t *testing.T) {
 		p    *Part
 		want CompressionOption
 	}{
+		{"base", new(Part), CompressionNormal},
 		{"partCompressionOption", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, CompressionNone},
+		{"partCompressionOption", &Part{"fakeUri", "fakeContentType", CompressionMaximum, nil}, CompressionMaximum},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
