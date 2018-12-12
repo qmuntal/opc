@@ -1,6 +1,11 @@
 package gopc
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"mime"
+	"strings"
+)
 
 // CompressionOption is an enumerable for the different compression options.
 type CompressionOption int
@@ -37,7 +42,19 @@ func newPart(uri, contentType string, compressionOption CompressionOption) (*Par
 		return nil, ErrInvalidTargetURI
 	}
 
-	return &Part{uri: uri, contentType: contentType, compressionOption: compressionOption}, nil
+	if !strings.Contains(contentType, "/") {
+		return nil, errors.New("mime: expected slash in content type")
+	}
+
+	// El content type ha de seguir el estandard de RDF 2616, buscar exemples
+	mediatype, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("media type: %s\nparams: %v", mediatype, params)
+
+	return &Part{uri: uri, contentType: mime.FormatMediaType(mediatype, params), compressionOption: compressionOption}, err
 }
 
 // AddRelationship add a relationship to the part.
