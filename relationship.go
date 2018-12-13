@@ -63,6 +63,7 @@ var (
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 
+// newRelationship creates a newRelationship
 func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
 	if strings.TrimSpace(targetURI) == "" {
 		return nil, ErrInvalidTargetURI
@@ -117,3 +118,7 @@ func (r *Relationship) toXML() *relationshipXML {
 func (r *Relationship) writeToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
 }
+
+/*
+FER UN DECODER AMB EL READ DE LES RELACIONS DE LA PART
+*/

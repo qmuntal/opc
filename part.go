@@ -94,3 +94,13 @@ func (p *Part) ContentType() string {
 func (p *Part) CompressionOption() CompressionOption {
 	return p.compressionOption
 }
+
+/* Implementar un WRITER de les relationships on escrigui totes les relationships d'una part, si en te, en un document, amb el format:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+	<Relationship Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" Id="rel-1" Target="/3D/3dmodel.model"/>
+	<Relationship Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail" Id="rel0" Target="/Metadata/thumbnail.png"/>
+</Relationships>
+
+*/
