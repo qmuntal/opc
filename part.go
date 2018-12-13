@@ -2,7 +2,6 @@ package gopc
 
 import (
 	"errors"
-	"fmt"
 	"mime"
 	"strings"
 )
@@ -46,13 +45,10 @@ func newPart(uri, contentType string, compressionOption CompressionOption) (*Par
 		return nil, errors.New("mime: expected slash in content type")
 	}
 
-	// El content type ha de seguir el estandard de RDF 2616, buscar exemples
 	mediatype, params, err := mime.ParseMediaType(contentType)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("media type: %s\nparams: %v", mediatype, params)
 
 	return &Part{uri: uri, contentType: mime.FormatMediaType(mediatype, params), compressionOption: compressionOption}, err
 }
