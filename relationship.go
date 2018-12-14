@@ -63,6 +63,7 @@ var (
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 
+// newRelationship creates a newRelationship
 func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
 	if strings.TrimSpace(targetURI) == "" {
 		return nil, ErrInvalidTargetURI
@@ -94,7 +95,7 @@ func (r *Relationship) Type() string {
 	return r.relType
 }
 
-// targetURI returns the targetURI of the relationship.
+// TargetURI returns the targetURI of the relationship.
 func (r *Relationship) TargetURI() string {
 	return r.targetURI
 }
