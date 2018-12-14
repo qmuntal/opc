@@ -118,7 +118,3 @@ func (r *Relationship) toXML() *relationshipXML {
 func (r *Relationship) writeToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
 }
-
-/*
-FER UN DECODER AMB EL READ DE LES RELACIONS DE LA PART
-*/
