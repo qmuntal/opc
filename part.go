@@ -88,13 +88,6 @@ const (
 	CompressionSuperFast
 )
 
-var (
-	// ErrDuplicatedRelationship throw error for invalid relationship.
-	ErrDuplicatedRelationship = errors.New("a relationship is duplicated")
-	// ErrInvalidContentType happens when the content type is ill-formed.
-	ErrInvalidContentType = errors.New("OPC: expected slash in content type")
-)
-
 // Part defines an OPC Package Object.
 type Part struct {
 	uri               string
@@ -110,7 +103,7 @@ func newPart(uri, contentType string, compressionOption CompressionOption) (*Par
 	}
 
 	if !strings.Contains(contentType, "/") {
-		return nil, ErrInvalidContentType
+		return nil, errors.New("OPC: expected slash in content type")
 	}
 
 	mediatype, params, err := mime.ParseMediaType(contentType)
@@ -127,7 +120,7 @@ func (p *Part) AddRelationship(id, reltype, uri string) (*Part, error) {
 
 	for i := 0; i < len(p.relationships); i++ {
 		if p.relationships[i].ID() == id && p.relationships[i].Type() == reltype {
-			return nil, ErrDuplicatedRelationship
+			return nil, errors.New("OPC: trying to add a duplicated relationship")
 		}
 	}
 	p.relationships = append(p.relationships, r)
