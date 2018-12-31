@@ -22,6 +22,18 @@ func ValidatePartName(name string) error {
 		return errors.New("OPC: a part URI shall not be empty [ISO/IEC 29500-2 M1.1]")
 	}
 
+	if err := validateChars(name); err != nil {
+		return err
+	}
+
+	if err := validateSegments(name); err != nil {
+		return err
+	}
+
+	return validateURL(name)
+}
+
+func validateURL(name string) error {
 	encodedURL, err := url.Parse(name)
 	if err != nil {
 		return err
@@ -31,6 +43,13 @@ func ValidatePartName(name string) error {
 		return errors.New("OPC: a part URI shall start with a forward slash character [ISO/IEC 29500-2 M1.4]")
 	}
 
+	if name != encodedURL.EscapedPath() {
+		return errors.New("OPC: segment shall not hold any characters other than pchar characters [ISO/IEC 29500-2 M1.6]")
+	}
+	return nil
+}
+
+func validateChars(name string) error {
 	if strings.HasSuffix(name, "/") {
 		return errors.New("OPC: a part URI shall not have a forward slash as the last character [ISO/IEC 29500-2 M1.5]")
 	}
@@ -42,15 +61,6 @@ func ValidatePartName(name string) error {
 	if strings.Contains(name, "//") {
 		return errors.New("OPC: a part URI shall not have empty segments [ISO/IEC 29500-2 M1.3]")
 	}
-
-	if err := validateSegments(name); err != nil {
-		return err
-	}
-
-	if name != encodedURL.EscapedPath() {
-		return errors.New("OPC: segment shall not hold any characters other than pchar characters [ISO/IEC 29500-2 M1.6]")
-	}
-
 	return nil
 }
 
