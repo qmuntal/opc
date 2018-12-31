@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+var fakeURL = "/doc/a.xml"
+
 func Test_newPart(t *testing.T) {
 	type args struct {
 		uri               string
@@ -17,16 +19,16 @@ func Test_newPart(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"base", args{"fakeUri", "application/HTML", CompressionNone}, &Part{"fakeUri", "application/html", CompressionNone, nil}, false},
-		{"baseWithParameters", args{"fakeUri", "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{"fakeUri", "text/html; charset=ISO-8859-4", CompressionNone, nil}, false},
-		{"baseWithTwoParameters", args{"fakeUri", "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{"fakeUri", "text/html; charset=ISO-8859-4; q=2", CompressionNone, nil}, false},
-		{"incorrectContentTypeInvalidMediaParameter", args{"fakeUri", "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
-		{"incorrectContentTypeInvalidMediaParameterNoParamentreName", args{"fakeUri", "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
-		{"incorrectContentTypeDuplicateParameterName", args{"fakeUri", "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
-		{"incorrectContentTypeNoSlash", args{"fakeUri", "application", CompressionNone}, nil, true},
-		{"incorrectContentTypeUnexpectedContent", args{"fakeUri", "application/html/html", CompressionNone}, nil, true},
-		{"incorrectContentTypeNoMediaType", args{"fakeUri", "/html", CompressionNone}, nil, true},
-		{"incorrectContentTypeExpectedToken", args{"fakeUri", "application/", CompressionNone}, nil, true},
+		{"base", args{fakeURL, "application/HTML", CompressionNone}, &Part{fakeURL, "application/html", CompressionNone, nil}, false},
+		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4", CompressionNone, nil}, false},
+		{"baseWithTwoParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone, nil}, false},
+		{"incorrectContentTypeInvalidMediaParameter", args{fakeURL, "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
+		{"incorrectContentTypeInvalidMediaParameterNoParamentreName", args{fakeURL, "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
+		{"incorrectContentTypeDuplicateParameterName", args{fakeURL, "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
+		{"incorrectContentTypeNoSlash", args{fakeURL, "application", CompressionNone}, nil, true},
+		{"incorrectContentTypeUnexpectedContent", args{fakeURL, "application/html/html", CompressionNone}, nil, true},
+		{"incorrectContentTypeNoMediaType", args{fakeURL, "/html", CompressionNone}, nil, true},
+		{"incorrectContentTypeExpectedToken", args{fakeURL, "application/", CompressionNone}, nil, true},
 		{"incorrectURI", args{"", "fakeContentType", CompressionNone}, nil, true},
 	}
 	for _, tt := range tests {
@@ -56,8 +58,8 @@ func TestPart_AddRelationship(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"newRelationship", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, args{"fakeId", "fakeType", "fakeTarget"}, &Part{"fakeUri", "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, false},
-		{"existingID", &Part{"fakeUri", "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, args{"fakeId", "fakeType", "fakeTarget"}, nil, true},
+		{"newRelationship", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, args{"fakeId", "fakeType", "fakeTarget"}, &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, false},
+		{"existingID", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, args{"fakeId", "fakeType", "fakeTarget"}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -79,8 +81,8 @@ func TestPart_HasRelationship(t *testing.T) {
 		p    *Part
 		want bool
 	}{
-		{"partRelationshipTrue", &Part{"fakeUri", "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, true},
-		{"partRelationshipFalse", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, false},
+		{"partRelationshipTrue", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, true},
+		{"partRelationshipFalse", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -97,8 +99,8 @@ func TestPart_Relationships(t *testing.T) {
 		p    *Part
 		want []*Relationship
 	}{
-		{"base", &Part{"fakeUri", "fakeContentType", CompressionNone, make([]*Relationship, 0)}, make([]*Relationship, 0)},
-		{"partRelationship", &Part{"fakeUri", "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}},
+		{"base", &Part{fakeURL, "fakeContentType", CompressionNone, make([]*Relationship, 0)}, make([]*Relationship, 0)},
+		{"partRelationship", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -116,7 +118,7 @@ func TestPart_URI(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partURI", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, "fakeUri"},
+		{"partURI", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, fakeURL},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,7 +136,7 @@ func TestPart_ContentType(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partContentType", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, "fakeContentType"},
+		{"partContentType", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, "fakeContentType"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -152,13 +154,48 @@ func TestPart_CompressionOption(t *testing.T) {
 		want CompressionOption
 	}{
 		{"base", new(Part), CompressionNormal},
-		{"partCompressionOption", &Part{"fakeUri", "fakeContentType", CompressionNone, nil}, CompressionNone},
-		{"partCompressionOption", &Part{"fakeUri", "fakeContentType", CompressionMaximum, nil}, CompressionMaximum},
+		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, CompressionNone},
+		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionMaximum, nil}, CompressionMaximum},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.p.CompressionOption(); got != tt.want {
 				t.Errorf("Part.CompressionOption() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidatePartName(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty", args{""}, true},
+		{"invalidURL", args{"/docs%/a.xml"}, true},
+		{"emptySegment", args{"/doc//a.xml"}, true},
+		{"abs uri", args{"http://docs//a.xml"}, true},
+		{"not rel uri", args{"docs/a.xml"}, true},
+		{"endSlash", args{"/docs/a.xml/"}, true},
+		{"endDot", args{"/docs/a.xml."}, true},
+		{"dot", args{"/docs/./a.xml"}, true},
+		{"twoDots", args{"/docs/../a.xml"}, true},
+		{"reserved", args{"/docs/%7E/a.xml"}, true},
+		{"withQuery", args{"/docs/a.xml?a=2"}, true},
+		{"notencodechar", args{"/€/a.xml"}, true},
+		{"encodedBSlash", args{"/%5C/a.xml"}, true},
+		{"encodedBSlash", args{"/%2F/a.xml"}, true},
+		{"encodechar", args{"/%E2%82%AC/a.xml"}, false},
+		{"base", args{"/docs/a.xml"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidatePartName(tt.args.name); (err != nil) != tt.wantErr {
+				t.Errorf("ValidatePartName() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

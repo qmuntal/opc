@@ -3,8 +3,74 @@ package gopc
 import (
 	"errors"
 	"mime"
+	"net/url"
 	"strings"
 )
+
+// ValidatePartName checks that the part name is follows the constrains specified in the ISO/IEC 29500-2 Section 9.1.1.1.2
+// A part name is the name of a part within a package encoded
+// as a URI per ISO/IEC 29500-2 Section 9.1.1:
+//     part-URI = 1*( "/" segment )
+//     segment = 1*( pchar )
+// pchar is defined in RFC 3986:
+//     pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+//     unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+//     pct-encoded = "%" HEXDIG HEXDIG
+//     sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+func ValidatePartName(name string) error {
+	if len(name) == 0 {
+		return errors.New("OPC: a part URI shall not be empty [ISO/IEC 29500-2 M1.1]")
+	}
+
+	encodedURL, err := url.Parse(name)
+	if err != nil {
+		return err
+	}
+
+	if name[0] != '/' || encodedURL.IsAbs() {
+		return errors.New("OPC: a part URI shall start with a forward slash character [ISO/IEC 29500-2 M1.4]")
+	}
+
+	if strings.HasSuffix(name, "/") {
+		return errors.New("OPC: a part URI shall not have a forward slash as the last character [ISO/IEC 29500-2 M1.5]")
+	}
+
+	if strings.HasSuffix(name, ".") {
+		return errors.New("OPC: a segment shall not end with a dot character [ISO/IEC 29500-2 M1.9]")
+	}
+
+	if strings.Contains(name, "//") {
+		return errors.New("OPC: a part URI shall not have empty segments [ISO/IEC 29500-2 M1.3]")
+	}
+
+	if err := validateSegments(name); err != nil {
+		return err
+	}
+
+	if name != encodedURL.EscapedPath() {
+		return errors.New("OPC: segment shall not hold any characters other than pchar characters [ISO/IEC 29500-2 M1.6]")
+	}
+
+	return nil
+}
+
+func validateSegments(name string) error {
+	if strings.Contains(name, "/./") || strings.Contains(name, "/../") {
+		return errors.New("OPC: a segment shall include at least one non-dot character [ISO/IEC 29500-2 M1.10]")
+	}
+
+	u := strings.ToUpper(name)
+	// "/" "\"
+	if strings.Contains(u, "%5C") || strings.Contains(u, "%2F") {
+		return errors.New("OPC: a segment shall not contain percent-encoded forward slash or backward slash characters [ISO/IEC 29500-2 M1.7]")
+	}
+
+	// "-" "." "_" "~"
+	if strings.Contains(u, "%2D") || strings.Contains(u, "%2E") || strings.Contains(u, "%5F") || strings.Contains(u, "%7E") {
+		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters [ISO/IEC 29500-2 M1.8]")
+	}
+	return nil
+}
 
 // CompressionOption is an enumerable for the different compression options.
 type CompressionOption int
@@ -25,6 +91,8 @@ const (
 var (
 	// ErrDuplicatedRelationship throw error for invalid relationship.
 	ErrDuplicatedRelationship = errors.New("a relationship is duplicated")
+	// ErrInvalidContentType happens when the content type is ill-formed.
+	ErrInvalidContentType = errors.New("OPC: expected slash in content type")
 )
 
 // Part defines an OPC Package Object.
@@ -37,12 +105,12 @@ type Part struct {
 
 // newPart creates a new part with no relationships.
 func newPart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
-	if len(uri) == 0 {
-		return nil, ErrInvalidTargetURI
+	if err := ValidatePartName(uri); err != nil {
+		return nil, err
 	}
 
 	if !strings.Contains(contentType, "/") {
-		return nil, errors.New("mime: expected slash in content type")
+		return nil, ErrInvalidContentType
 	}
 
 	mediatype, params, err := mime.ParseMediaType(contentType)
