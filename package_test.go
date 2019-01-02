@@ -20,9 +20,9 @@ func TestPackage_CreatePart(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"duplicated", &Package{map[string]*Part{fakeURLUpper: &Part{}}}, args{fakeURL, "a/b", CompressionNone}, nil, true},
-		{"collision1", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}}, args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
-		{"collision2", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}}, args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
+		{"duplicated", &Package{map[string]*Part{fakeURLUpper: &Part{}}, nil}, args{fakeURL, "a/b", CompressionNone}, nil, true},
+		{"collision1", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}, nil}, args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
+		{"collision2", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}, nil}, args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
 		{"errorPart", NewPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
 		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, &Part{"/a.xml", "a/b", CompressionNone, nil}, false},
 	}

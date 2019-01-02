@@ -7,7 +7,8 @@ import (
 )
 
 type Package struct {
-	parts map[string]*Part
+	parts         map[string]*Part
+	relationships []*Relationship
 }
 
 func NewPackage() *Package {
