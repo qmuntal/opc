@@ -7,9 +7,8 @@ import (
 	"strings"
 )
 
-// ValidatePartName checks that the part name is follows the constrains specified in the ISO/IEC 29500-2 Section 9.1.1.1.2
-// A part name is the name of a part within a package encoded
-// as a URI per ISO/IEC 29500-2 Section 9.1.1:
+// ValidatePartName checks that the part name follows the constrains specified in the ISO/IEC 29500-2 §9.1.1
+// A part name is the name of a part within a package encoded as a URI per ISO/IEC 29500-2 §9.1.1:
 //     part-URI = 1*( "/" segment )
 //     segment = 1*( pchar )
 // pchar is defined in RFC 3986:

@@ -21,14 +21,15 @@ func Test_newPart(t *testing.T) {
 	}{
 		{"base", args{fakeURL, "application/HTML", CompressionNone}, &Part{fakeURL, "application/html", CompressionNone, nil}, false},
 		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4", CompressionNone, nil}, false},
-		{"baseWithTwoParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone, nil}, false},
-		{"incorrectContentTypeInvalidMediaParameter", args{fakeURL, "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
-		{"incorrectContentTypeInvalidMediaParameterNoParamentreName", args{fakeURL, "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
-		{"incorrectContentTypeDuplicateParameterName", args{fakeURL, "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
-		{"incorrectContentTypeNoSlash", args{fakeURL, "application", CompressionNone}, nil, true},
-		{"incorrectContentTypeUnexpectedContent", args{fakeURL, "application/html/html", CompressionNone}, nil, true},
-		{"incorrectContentTypeNoMediaType", args{fakeURL, "/html", CompressionNone}, nil, true},
-		{"incorrectContentTypeExpectedToken", args{fakeURL, "application/", CompressionNone}, nil, true},
+		{"baseWithTwoParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone, nil}, false},
+		{"invalidMediaParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
+		{"mediaParamNoName", args{fakeURL, "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
+		{"duplicateParamName", args{fakeURL, "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
+		{"linearSpace", args{fakeURL, "TEXT /html; charset=ISO-8859-4;q=2", CompressionNone}, nil, true},
+		{"noSlash", args{fakeURL, "application", CompressionNone}, nil, true},
+		{"unexpectedContent", args{fakeURL, "application/html/html", CompressionNone}, nil, true},
+		{"noMediaType", args{fakeURL, "/html", CompressionNone}, nil, true},
+		{"unexpectedToken", args{fakeURL, "application/", CompressionNone}, nil, true},
 		{"incorrectURI", args{"", "fakeContentType", CompressionNone}, nil, true},
 	}
 	for _, tt := range tests {
