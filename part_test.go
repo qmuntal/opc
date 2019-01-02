@@ -176,6 +176,7 @@ func TestValidatePartName(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{""}, true},
+		{"onlyspaces", args{"  "}, true},
 		{"invalidURL", args{"/docs%/a.xml"}, true},
 		{"emptySegment", args{"/doc//a.xml"}, true},
 		{"abs uri", args{"http://docs//a.xml"}, true},

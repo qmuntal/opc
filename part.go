@@ -18,8 +18,9 @@ import (
 //     pct-encoded = "%" HEXDIG HEXDIG
 //     sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 func ValidatePartName(name string) error {
-	if len(name) == 0 {
-		return errors.New("OPC: a part URI shall not be empty [ISO/IEC 29500-2 M1.1]")
+	// ISO/IEC 29500-2 M1.1
+	if strings.TrimSpace(name) == "" {
+		return errors.New("OPC: a part URI shall not be empty")
 	}
 
 	if err := validateChars(name); err != nil {
@@ -39,45 +40,53 @@ func validateURL(name string) error {
 		return err
 	}
 
+	// ISO/IEC 29500-2 M1.4
 	if name[0] != '/' || encodedURL.IsAbs() {
-		return errors.New("OPC: a part URI shall start with a forward slash character [ISO/IEC 29500-2 M1.4]")
+		return errors.New("OPC: a part URI shall start with a forward slash character")
 	}
 
+	// ISO/IEC 29500-2 M1.6
 	if name != encodedURL.EscapedPath() {
-		return errors.New("OPC: segment shall not hold any characters other than pchar characters [ISO/IEC 29500-2 M1.6]")
+		return errors.New("OPC: segment shall not hold any characters other than pchar characters")
 	}
 	return nil
 }
 
 func validateChars(name string) error {
+	// ISO/IEC 29500-2 M1.5
 	if strings.HasSuffix(name, "/") {
-		return errors.New("OPC: a part URI shall not have a forward slash as the last character [ISO/IEC 29500-2 M1.5]")
+		return errors.New("OPC: a part URI shall not have a forward slash as the last character")
 	}
 
+	// ISO/IEC 29500-2 M1.9
 	if strings.HasSuffix(name, ".") {
-		return errors.New("OPC: a segment shall not end with a dot character [ISO/IEC 29500-2 M1.9]")
+		return errors.New("OPC: a segment shall not end with a dot character")
 	}
 
+	// ISO/IEC 29500-2 M1.3
 	if strings.Contains(name, "//") {
-		return errors.New("OPC: a part URI shall not have empty segments [ISO/IEC 29500-2 M1.3]")
+		return errors.New("OPC: a part URI shall not have empty segments")
 	}
 	return nil
 }
 
 func validateSegments(name string) error {
+	// ISO/IEC 29500-2 M1.10
 	if strings.Contains(name, "/./") || strings.Contains(name, "/../") {
-		return errors.New("OPC: a segment shall include at least one non-dot character [ISO/IEC 29500-2 M1.10]")
+		return errors.New("OPC: a segment shall include at least one non-dot character")
 	}
 
 	u := strings.ToUpper(name)
+	// ISO/IEC 29500-2 M1.7
 	// "/" "\"
 	if strings.Contains(u, "%5C") || strings.Contains(u, "%2F") {
-		return errors.New("OPC: a segment shall not contain percent-encoded forward slash or backward slash characters [ISO/IEC 29500-2 M1.7]")
+		return errors.New("OPC: a segment shall not contain percent-encoded forward slash or backward slash characters")
 	}
 
+	// ISO/IEC 29500-2 M1.8
 	// "-" "." "_" "~"
 	if strings.Contains(u, "%2D") || strings.Contains(u, "%2E") || strings.Contains(u, "%5F") || strings.Contains(u, "%7E") {
-		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters [ISO/IEC 29500-2 M1.8]")
+		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters")
 	}
 	return nil
 }
