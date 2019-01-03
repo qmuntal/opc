@@ -1,13 +1,7 @@
 // Package gopc implements the ISO/IEC 29500-2, also known as the "Open Packaging Convention".
 // The Open Packaging specification describes an abstract model and physical format conventions for the use of
 // XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and
-// resources of a document within a package. It is intended to support the content types and organization for
-// various applications and is written for developers who are building systems that process package content.
-// In addition, this Open Packaging specification defines common services that can be included in a package, such
-// as Core Properties and Digital Signatures.
-// A primary goal is to ensure the interoperability of independently created software and hardware systems that
-// produce or consume package content and use common services. This Open Packaging specification defines the
-// formal requirements that producers and consumers must satisfy in order to achieve interoperability.
+// resources of a document within a package.
 package gopc
 
 import (
