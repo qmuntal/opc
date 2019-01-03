@@ -156,12 +156,12 @@ func (r *Relationship) writeToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
 }
 
-type relationable struct {
+type relationer struct {
 	sourceURI     string
 	relationships map[string]*Relationship
 }
 
-func (r *relationable) CreateRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
+func (r *relationer) CreateRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
 	if _, ok := r.relationships[id]; ok {
 		return nil, errors.New("OPC: relationship ID shall be unique within the Relationship part")
 	}
@@ -173,11 +173,11 @@ func (r *relationable) CreateRelationship(id, relType, targetURI string, targetM
 	return rel, nil
 }
 
-func (r *relationable) HasRelationship() bool {
+func (r *relationer) HasRelationship() bool {
 	return len(r.relationships) > 0
 }
 
-func (r *relationable) Relationships() []*Relationship {
+func (r *relationer) Relationships() []*Relationship {
 	v := make([]*Relationship, 0, len(r.relationships))
 	for _, rel := range r.relationships {
 		v = append(v, rel)

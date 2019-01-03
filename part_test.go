@@ -9,7 +9,7 @@ var fakeURL = "/doc/a.xml"
 
 func createFakePart(uri, contentType string) *Part {
 	return &Part{
-		relationable:      relationable{uri, make(map[string]*Relationship, 0)},
+		relationer:        relationer{uri, make(map[string]*Relationship, 0)},
 		uri:               uri,
 		contentType:       contentType,
 		compressionOption: CompressionNone}

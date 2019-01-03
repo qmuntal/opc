@@ -14,7 +14,7 @@ func createFakePackage(m ...string) *Package {
 		parts[strings.ToUpper(s)] = new(Part)
 	}
 	return &Package{
-		relationable:  relationable{"/", make(map[string]*Relationship, 0)},
+		relationer:    relationer{"/", make(map[string]*Relationship, 0)},
 		parts:         parts,
 		relationships: nil,
 	}
@@ -59,7 +59,7 @@ func Test_newPackage(t *testing.T) {
 		want *Package
 	}{
 		{"base", &Package{
-			relationable:  relationable{"/", make(map[string]*Relationship, 0)},
+			relationer:    relationer{"/", make(map[string]*Relationship, 0)},
 			parts:         make(map[string]*Part, 0),
 			relationships: make(map[string]*Relationship, 0),
 		},

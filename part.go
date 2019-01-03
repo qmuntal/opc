@@ -139,7 +139,7 @@ const (
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
 // Defined in ISO/IEC 29500-2 §9.1.
 type Part struct {
-	relationable
+	relationer
 	uri               string
 	contentType       string
 	compressionOption CompressionOption
@@ -161,7 +161,7 @@ func newPart(uri, contentType string, compressionOption CompressionOption) (*Par
 	}
 
 	return &Part{
-		relationable:      relationable{uri, make(map[string]*Relationship, 0)},
+		relationer:        relationer{uri, make(map[string]*Relationship, 0)},
 		uri:               uri,
 		contentType:       mime.FormatMediaType(mediatype, params),
 		compressionOption: compressionOption}, nil

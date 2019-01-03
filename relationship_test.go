@@ -126,7 +126,7 @@ func Test_newRelationship(t *testing.T) {
 	}
 }
 
-func Test_relationable_CreateRelationship(t *testing.T) {
+func Test_relationer_CreateRelationship(t *testing.T) {
 	type args struct {
 		id         string
 		relType    string
@@ -135,24 +135,24 @@ func Test_relationable_CreateRelationship(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		r       *relationable
+		r       *relationer
 		args    args
 		want    *Relationship
 		wantErr bool
 	}{
-		{"duplicatedID", &relationable{"/", map[string]*Relationship{"/a": new(Relationship)}}, args{"/a", "http://a.com", "/a.xml", ModeInternal}, nil, true},
-		{"newRelErr", &relationable{"/", map[string]*Relationship{}}, args{"", "http://a.com", "/a.xml", ModeInternal}, nil, true},
-		{"base", &relationable{"/", map[string]*Relationship{}}, args{"/a", "http://a.com", "/a.xml", ModeInternal}, &Relationship{"/a", "http://a.com", "", "/a.xml", ModeInternal}, false},
+		{"duplicatedID", &relationer{"/", map[string]*Relationship{"/a": new(Relationship)}}, args{"/a", "http://a.com", "/a.xml", ModeInternal}, nil, true},
+		{"newRelErr", &relationer{"/", map[string]*Relationship{}}, args{"", "http://a.com", "/a.xml", ModeInternal}, nil, true},
+		{"base", &relationer{"/", map[string]*Relationship{}}, args{"/a", "http://a.com", "/a.xml", ModeInternal}, &Relationship{"/a", "http://a.com", "", "/a.xml", ModeInternal}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.r.CreateRelationship(tt.args.id, tt.args.relType, tt.args.targetURI, tt.args.targetMode)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("relationable.CreateRelationship() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("relationer.CreateRelationship() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("relationable.CreateRelationship() = %v, want %v", got, tt.want)
+				t.Errorf("relationer.CreateRelationship() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -185,36 +185,36 @@ func Test_isRelationshipURI(t *testing.T) {
 	}
 }
 
-func Test_relationable_Relationships(t *testing.T) {
+func Test_relationer_Relationships(t *testing.T) {
 	tests := []struct {
 		name string
-		r    *relationable
+		r    *relationer
 		want []*Relationship
 	}{
-		{"base", &relationable{"/", map[string]*Relationship{"/a": new(Relationship)}}, []*Relationship{new(Relationship)}},
+		{"base", &relationer{"/", map[string]*Relationship{"/a": new(Relationship)}}, []*Relationship{new(Relationship)}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.r.Relationships(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("relationable.Relationships() = %v, want %v", got, tt.want)
+				t.Errorf("relationer.Relationships() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_relationable_HasRelationship(t *testing.T) {
+func Test_relationer_HasRelationship(t *testing.T) {
 	tests := []struct {
 		name string
-		r    *relationable
+		r    *relationer
 		want bool
 	}{
-		{"base", &relationable{"/", map[string]*Relationship{"/a": new(Relationship)}}, true},
-		{"empty", &relationable{"/", map[string]*Relationship{}}, false},
+		{"base", &relationer{"/", map[string]*Relationship{"/a": new(Relationship)}}, true},
+		{"empty", &relationer{"/", map[string]*Relationship{}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.r.HasRelationship(); got != tt.want {
-				t.Errorf("relationable.HasRelationship() = %v, want %v", got, tt.want)
+				t.Errorf("relationer.HasRelationship() = %v, want %v", got, tt.want)
 			}
 		})
 	}

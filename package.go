@@ -16,7 +16,7 @@ import (
 // The package is also capable of storing relationships between parts.
 // Defined in ISO/IEC 29500-2 §9.
 type Package struct {
-	relationable
+	relationer
 	parts         map[string]*Part
 	relationships map[string]*Relationship
 }
@@ -24,7 +24,7 @@ type Package struct {
 // newPackage returns a new initilized Package.
 func newPackage() *Package {
 	return &Package{
-		relationable:  relationable{"/", make(map[string]*Relationship, 0)},
+		relationer:    relationer{"/", make(map[string]*Relationship, 0)},
 		parts:         make(map[string]*Part, 0),
 		relationships: make(map[string]*Relationship, 0),
 	}
