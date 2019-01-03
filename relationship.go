@@ -42,7 +42,7 @@ type relationshipXML struct {
 	Mode      string `xml:"TargetMode,attr,omitempty"`
 }
 
-var (
+const (
 	// RelTypeMetaDataCoreProps defines a core properties relationship.
 	RelTypeMetaDataCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
 	// RelTypeDigitalSignature defines a digital signature relationship.
