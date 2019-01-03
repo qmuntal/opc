@@ -27,6 +27,7 @@ const externalMode = "External"
 // or Package.NewRelationship(). A relationship is owned by a part or by the package itself.
 // If the source part is deleted all the relationships it owns are also deleted.
 // A target of the relationship need not be present.
+// Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
 	id         string
 	relType    string
@@ -42,15 +43,6 @@ type relationshipXML struct {
 }
 
 var (
-	// ErrInvalidTargetURI happens when the target uri is invalid.
-	ErrInvalidTargetURI = errors.New("OPC: invalid target URI")
-	// ErrInvalidRelType happens when a relation type is empty.
-	ErrInvalidRelType = errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
-	// ErrRelationshipInternalAbs happens when a relationship is internal and has an absolute targetURI.
-	ErrRelationshipInternalAbs = errors.New("OPC: relationship target must be relative if the TargetMode is Internal")
-)
-
-var (
 	// RelTypeMetaDataCoreProps defines a core properties relationship.
 	RelTypeMetaDataCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
 	// RelTypeDigitalSignature defines a digital signature relationship.
@@ -63,23 +55,42 @@ var (
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 
-// newRelationship creates a newRelationship
+// ValidateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3
+func ValidateRelationshipTarget(targetURI string, targetMode TargetMode) error {
+	// ISO/IEC 29500-2 M1.28
+	uri, err := url.Parse(strings.TrimSpace(targetURI))
+	if err != nil || uri.String() == "" {
+		return errors.New("OPC: relationship target URI reference shall be a URI or a relative reference")
+	}
+
+	// ISO/IEC 29500-2 M1.29
+	if targetMode == ModeInternal && uri.IsAbs() {
+		return errors.New("OPC: relationship target URI must be relative if the TargetMode is Internal")
+	}
+
+	return nil
+}
+
+func resolvePartURI(partURI, targetURI *url.URL) (string, error) {
+	if partURI.IsAbs() || targetURI.IsAbs() {
+		return "", errors.New("OPC: ")
+	}
+	return "", nil
+}
+
+// newRelationship creates a new Relationship
 func newRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
-	if strings.TrimSpace(targetURI) == "" {
-		return nil, ErrInvalidTargetURI
+	// ISO/IEC 29500-2 M1.26
+	if strings.TrimSpace(id) == "" {
+		return nil, errors.New("OPC: relationship identifier cannot be empty string or a string with just spaces")
 	}
 
 	if strings.TrimSpace(relType) == "" {
-		return nil, ErrInvalidRelType
+		return nil, errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
 	}
 
-	uri, err := url.Parse(targetURI)
-	if err != nil {
-		return nil, ErrInvalidTargetURI
-	}
-
-	if targetMode == ModeInternal && uri.IsAbs() {
-		return nil, ErrRelationshipInternalAbs
+	if err := ValidateRelationshipTarget(targetURI, targetMode); err != nil {
+		return nil, err
 	}
 
 	return &Relationship{id: id, relType: relType, targetURI: targetURI, targetMode: targetMode}, nil
@@ -117,4 +128,20 @@ func (r *Relationship) toXML() *relationshipXML {
 // writeToXML encodes the relationship to the target.
 func (r *Relationship) writeToXML(e *xml.Encoder) error {
 	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
+}
+
+type relator struct {
+	relationships map[string]*Relationship
+}
+
+func (r *relator) CreateRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
+	if _, ok := r.relationships[id]; ok {
+		return nil, errors.New("OPC: relationship ID shall be unique within the Relationship part")
+	}
+	rel, err := newRelationship(id, relType, targetURI, targetMode)
+	if err != nil {
+		return nil, err
+	}
+	r.relationships[id] = rel
+	return rel, nil
 }

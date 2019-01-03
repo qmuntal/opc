@@ -2,10 +2,22 @@ package gopc
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
 var fakeURLUpper = "/DOC/A.XML"
+
+func createFakePackage(m ...string) *Package {
+	parts := make(map[string]*Part, len(m))
+	for _, s := range m {
+		parts[strings.ToUpper(s)] = new(Part)
+	}
+	return &Package{
+		parts:         parts,
+		relationships: nil,
+	}
+}
 
 func TestPackage_CreatePart(t *testing.T) {
 	type args struct {
@@ -20,9 +32,9 @@ func TestPackage_CreatePart(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"duplicated", &Package{map[string]*Part{fakeURLUpper: &Part{}}, nil}, args{fakeURL, "a/b", CompressionNone}, nil, true},
-		{"collision1", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}, nil}, args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
-		{"collision2", &Package{map[string]*Part{"/ABC.XML": &Part{}, "/XYZ/PQR/A.JPG": &Part{}}, nil}, args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
+		{"duplicated", createFakePackage(fakeURL), args{fakeURL, "a/b", CompressionNone}, nil, true},
+		{"collision1", createFakePackage("/abc.xml", "/xyz/PQR/A.JPG"), args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
+		{"collision2", createFakePackage("/ABC.XML", "/XYZ/PQR/A.JPG"), args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
 		{"errorPart", NewPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
 		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, &Part{"/a.xml", "a/b", CompressionNone, nil}, false},
 	}
@@ -46,7 +58,8 @@ func TestNewPackage(t *testing.T) {
 		want *Package
 	}{
 		{"base", &Package{
-			parts: make(map[string]*Part, 0),
+			parts:         make(map[string]*Part, 0),
+			relationships: make(map[string]*Relationship, 0),
 		},
 		},
 	}

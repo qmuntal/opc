@@ -7,8 +7,7 @@ import (
 	"strings"
 )
 
-// ValidatePartName checks that the part name follows the constrains specified in the ISO/IEC 29500-2 §9.1.1
-// A part name is the name of a part within a package encoded as a URI per ISO/IEC 29500-2 §9.1.1:
+// ValidatePartName checks that the part name follows the constrains specified in the ISO/IEC 29500-2 §9.1.1:
 //     part-URI = 1*( "/" segment )
 //     segment = 1*( pchar )
 // pchar is defined in RFC 3986:
@@ -106,7 +105,9 @@ const (
 	CompressionSuperFast
 )
 
-// Part defines an OPC Package Object.
+// A part is a stream of bytes whose main properties are the name and the content type.
+// Parts are analogous to a file in a file system or to a resource on an HTTP server.
+// Defined in ISO/IEC 29500-2 §9.1.
 type Part struct {
 	uri               string
 	contentType       string
