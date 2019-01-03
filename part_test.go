@@ -7,6 +7,14 @@ import (
 
 var fakeURL = "/doc/a.xml"
 
+func createFakePart(uri, contentType string) *Part {
+	return &Part{
+		relationable:      relationable{uri, make(map[string]*Relationship, 0)},
+		uri:               uri,
+		contentType:       contentType,
+		compressionOption: CompressionNone}
+}
+
 func Test_newPart(t *testing.T) {
 	type args struct {
 		uri               string
@@ -19,9 +27,9 @@ func Test_newPart(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"base", args{fakeURL, "application/HTML", CompressionNone}, &Part{fakeURL, "application/html", CompressionNone}, false},
-		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4", CompressionNone}, false},
-		{"baseWithTwoParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone}, false},
+		{"base", args{fakeURL, "application/HTML", CompressionNone}, createFakePart(fakeURL, "application/html"), false},
+		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, createFakePart(fakeURL, "text/html; charset=ISO-8859-4"), false},
+		{"baseWithTwoParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, createFakePart(fakeURL, "text/html; charset=ISO-8859-4; q=2"), false},
 		{"invalidMediaParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
 		{"mediaParamNoName", args{fakeURL, "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
 		{"duplicateParamName", args{fakeURL, "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
@@ -53,7 +61,7 @@ func TestPart_URI(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partURI", &Part{fakeURL, "fakeContentType", CompressionNone}, fakeURL},
+		{"partURI", createFakePart(fakeURL, "fakeContentType"), fakeURL},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,7 +79,7 @@ func TestPart_ContentType(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partContentType", &Part{fakeURL, "fakeContentType", CompressionNone}, "fakeContentType"},
+		{"partContentType", createFakePart(fakeURL, "fakeContentType"), "fakeContentType"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -89,8 +97,7 @@ func TestPart_CompressionOption(t *testing.T) {
 		want CompressionOption
 	}{
 		{"base", new(Part), CompressionNormal},
-		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionNone}, CompressionNone},
-		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionMaximum}, CompressionMaximum},
+		{"partCompressionOption", createFakePart(fakeURL, "fakeContentType"), CompressionNone},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

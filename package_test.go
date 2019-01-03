@@ -14,6 +14,7 @@ func createFakePackage(m ...string) *Package {
 		parts[strings.ToUpper(s)] = new(Part)
 	}
 	return &Package{
+		relationable:  relationable{"/", make(map[string]*Relationship, 0)},
 		parts:         parts,
 		relationships: nil,
 	}
@@ -36,7 +37,7 @@ func TestPackage_CreatePart(t *testing.T) {
 		{"collision1", createFakePackage("/abc.xml", "/xyz/PQR/A.JPG"), args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
 		{"collision2", createFakePackage("/ABC.XML", "/XYZ/PQR/A.JPG"), args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
 		{"errorPart", NewPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
-		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, &Part{"/a.xml", "a/b", CompressionNone}, false},
+		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, createFakePart("/a.xml", "a/b"), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,6 +59,7 @@ func TestNewPackage(t *testing.T) {
 		want *Package
 	}{
 		{"base", &Package{
+			relationable:  relationable{"/", make(map[string]*Relationship, 0)},
 			parts:         make(map[string]*Part, 0),
 			relationships: make(map[string]*Relationship, 0),
 		},
