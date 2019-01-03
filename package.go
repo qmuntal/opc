@@ -1,4 +1,5 @@
 // Package gopc implements the ISO/IEC 29500-2, also known as the "Open Packaging Convention".
+//
 // The Open Packaging specification describes an abstract model and physical format conventions for the use of
 // XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and
 // resources of a document within a package.
@@ -20,8 +21,8 @@ type Package struct {
 	relationships map[string]*Relationship
 }
 
-// NewPackage returns a new initilized Package.
-func NewPackage() *Package {
+// newPackage returns a new initilized Package.
+func newPackage() *Package {
 	return &Package{
 		relationable:  relationable{"/", make(map[string]*Relationship, 0)},
 		parts:         make(map[string]*Part, 0),
@@ -30,6 +31,7 @@ func NewPackage() *Package {
 }
 
 // CreatePart adds a new Part to the Package.
+// The part URI shall be a valid part name, one can use NormalizePartName before calling CreatePart to normalize the URI as a part name.
 func (p *Package) CreatePart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
 	upperURI := strings.ToUpper(uri)
 	if _, ok := p.parts[upperURI]; ok {

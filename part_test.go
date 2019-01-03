@@ -108,7 +108,7 @@ func TestPart_CompressionOption(t *testing.T) {
 	}
 }
 
-func TestValidatePartName(t *testing.T) {
+func Test_validatePartName(t *testing.T) {
 	type args struct {
 		name string
 	}
@@ -119,6 +119,7 @@ func TestValidatePartName(t *testing.T) {
 	}{
 		{"empty", args{""}, true},
 		{"onlyspaces", args{"  "}, true},
+		{"onlyslash", args{"/"}, true},
 		{"invalidURL", args{"/docs%/a.xml"}, true},
 		{"emptySegment", args{"/doc//a.xml"}, true},
 		{"abs uri", args{"http://docs//a.xml"}, true},
@@ -137,8 +138,50 @@ func TestValidatePartName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidatePartName(tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("ValidatePartName() error = %v, wantErr %v", err, tt.wantErr)
+			if err := validatePartName(tt.args.name); (err != nil) != tt.wantErr {
+				t.Errorf("validatePartName() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNormalizePartName(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{"base", args{"/a.xml"}, "/a.xml", false},
+		{"onedot", args{"/./a.xml"}, "/a.xml", false},
+		{"doubledot", args{"/../a.xml"}, "/a.xml", false},
+		{"noslash", args{"a.xml"}, "/a.xml", false},
+		{"folder", args{"/docs/a.xml"}, "/docs/a.xml", false},
+		{"noext", args{"/docs"}, "/docs", false},
+		{"win", args{"\\docs\\a.xml"}, "/docs/a.xml", false},
+		{"winnoslash", args{"docs\\a.xml"}, "/docs/a.xml", false},
+		{"fragment", args{"/docs/a.xml#a"}, "/docs/a.xml", false},
+		{"twoslash", args{"//docs/a.xml"}, "/docs/a.xml", false},
+		{"necessaryEscaped", args{"//docs/!\".xml"}, "/docs/%21%22.xml", false},
+		{"unecessaryEscaped", args{"//docs/%41.xml"}, "/docs/A.xml", false},
+		{"endslash", args{"/docs/a.xml/"}, "/docs/a.xml", false},
+		{"empty", args{""}, "", true},
+		{"onlyslash", args{"/"}, "", true},
+		{"invalidURL", args{"/docs%/a.xml"}, "", true},
+		{"abs", args{"http://a.com/docs%/a.xml"}, "", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizePartName(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizePartName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizePartName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

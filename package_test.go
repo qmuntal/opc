@@ -36,8 +36,8 @@ func TestPackage_CreatePart(t *testing.T) {
 		{"duplicated", createFakePackage(fakeURL), args{fakeURL, "a/b", CompressionNone}, nil, true},
 		{"collision1", createFakePackage("/abc.xml", "/xyz/PQR/A.JPG"), args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
 		{"collision2", createFakePackage("/ABC.XML", "/XYZ/PQR/A.JPG"), args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
-		{"errorPart", NewPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
-		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, createFakePart("/a.xml", "a/b"), false},
+		{"errorPart", newPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
+		{"base", newPackage(), args{"/a.xml", "a/b", CompressionNone}, createFakePart("/a.xml", "a/b"), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestPackage_CreatePart(t *testing.T) {
 	}
 }
 
-func TestNewPackage(t *testing.T) {
+func Test_newPackage(t *testing.T) {
 	tests := []struct {
 		name string
 		want *Package
@@ -67,8 +67,8 @@ func TestNewPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewPackage(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewPackage() = %v, want %v", got, tt.want)
+			if got := newPackage(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("newPackage() = %v, want %v", got, tt.want)
 			}
 		})
 	}
