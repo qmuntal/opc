@@ -36,7 +36,7 @@ func TestPackage_CreatePart(t *testing.T) {
 		{"collision1", createFakePackage("/abc.xml", "/xyz/PQR/A.JPG"), args{"/abc.xml/b.xml", "a/b", CompressionNone}, nil, true},
 		{"collision2", createFakePackage("/ABC.XML", "/XYZ/PQR/A.JPG"), args{"/xyz/pqr", "a/b", CompressionNone}, nil, true},
 		{"errorPart", NewPackage(), args{"a.xml", "a/b", CompressionNone}, nil, true},
-		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, &Part{"/a.xml", "a/b", CompressionNone, nil}, false},
+		{"base", NewPackage(), args{"/a.xml", "a/b", CompressionNone}, &Part{"/a.xml", "a/b", CompressionNone}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

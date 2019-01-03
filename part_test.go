@@ -19,9 +19,9 @@ func Test_newPart(t *testing.T) {
 		want    *Part
 		wantErr bool
 	}{
-		{"base", args{fakeURL, "application/HTML", CompressionNone}, &Part{fakeURL, "application/html", CompressionNone, nil}, false},
-		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4", CompressionNone, nil}, false},
-		{"baseWithTwoParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone, nil}, false},
+		{"base", args{fakeURL, "application/HTML", CompressionNone}, &Part{fakeURL, "application/html", CompressionNone}, false},
+		{"baseWithParameters", args{fakeURL, "TEXT/html; charset=ISO-8859-4", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4", CompressionNone}, false},
+		{"baseWithTwoParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4;q=2", CompressionNone}, &Part{fakeURL, "text/html; charset=ISO-8859-4; q=2", CompressionNone}, false},
 		{"invalidMediaParams", args{fakeURL, "TEXT/html; charset=ISO-8859-4 q=2", CompressionNone}, nil, true},
 		{"mediaParamNoName", args{fakeURL, "TEXT/html; =ISO-8859-4", CompressionNone}, nil, true},
 		{"duplicateParamName", args{fakeURL, "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", CompressionNone}, nil, true},
@@ -46,72 +46,6 @@ func Test_newPart(t *testing.T) {
 	}
 }
 
-func TestPart_AddRelationship(t *testing.T) {
-	type args struct {
-		id      string
-		reltype string
-		uri     string
-	}
-	tests := []struct {
-		name    string
-		p       *Part
-		args    args
-		want    *Part
-		wantErr bool
-	}{
-		{"newRelationship", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, args{"fakeId", "fakeType", "fakeTarget"}, &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, false},
-		{"existingID", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, args{"fakeId", "fakeType", "fakeTarget"}, nil, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.p.AddRelationship(tt.args.id, tt.args.reltype, tt.args.uri)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Part.AddRelationship() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Part.AddRelationship() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestPart_HasRelationship(t *testing.T) {
-	tests := []struct {
-		name string
-		p    *Part
-		want bool
-	}{
-		{"partRelationshipTrue", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, true},
-		{"partRelationshipFalse", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.HasRelationship(); got != tt.want {
-				t.Errorf("Part.HasRelationship() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestPart_Relationships(t *testing.T) {
-	tests := []struct {
-		name string
-		p    *Part
-		want []*Relationship
-	}{
-		{"base", &Part{fakeURL, "fakeContentType", CompressionNone, make([]*Relationship, 0)}, make([]*Relationship, 0)},
-		{"partRelationship", &Part{fakeURL, "fakeContentType", CompressionNone, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}}, []*Relationship{&Relationship{"fakeId", "fakeType", "fakeTarget", ModeInternal}}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Relationships(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Part.Relationships() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestPart_URI(t *testing.T) {
 	tests := []struct {
 		name string
@@ -119,7 +53,7 @@ func TestPart_URI(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partURI", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, fakeURL},
+		{"partURI", &Part{fakeURL, "fakeContentType", CompressionNone}, fakeURL},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -137,7 +71,7 @@ func TestPart_ContentType(t *testing.T) {
 		want string
 	}{
 		{"base", new(Part), ""},
-		{"partContentType", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, "fakeContentType"},
+		{"partContentType", &Part{fakeURL, "fakeContentType", CompressionNone}, "fakeContentType"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -155,8 +89,8 @@ func TestPart_CompressionOption(t *testing.T) {
 		want CompressionOption
 	}{
 		{"base", new(Part), CompressionNormal},
-		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionNone, nil}, CompressionNone},
-		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionMaximum, nil}, CompressionMaximum},
+		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionNone}, CompressionNone},
+		{"partCompressionOption", &Part{fakeURL, "fakeContentType", CompressionMaximum}, CompressionMaximum},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -112,10 +112,9 @@ type Part struct {
 	uri               string
 	contentType       string
 	compressionOption CompressionOption
-	relationships     []*Relationship
 }
 
-// newPart creates a new part with no relationships.
+// newPart creates a new part.
 func newPart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
 	if err := ValidatePartName(uri); err != nil {
 		return nil, err
@@ -131,29 +130,6 @@ func newPart(uri, contentType string, compressionOption CompressionOption) (*Par
 	}
 
 	return &Part{uri: uri, contentType: mime.FormatMediaType(mediatype, params), compressionOption: compressionOption}, err
-}
-
-// AddRelationship add a relationship to the part.
-func (p *Part) AddRelationship(id, reltype, uri string) (*Part, error) {
-	r, err := newRelationship(id, reltype, uri, ModeInternal)
-
-	for i := 0; i < len(p.relationships); i++ {
-		if p.relationships[i].ID() == id && p.relationships[i].Type() == reltype {
-			return nil, errors.New("OPC: trying to add a duplicated relationship")
-		}
-	}
-	p.relationships = append(p.relationships, r)
-	return p, err
-}
-
-// HasRelationship return true if the part have relationships
-func (p *Part) HasRelationship() bool {
-	return len(p.relationships) > 0
-}
-
-// Relationships return all the relationships of the part
-func (p *Part) Relationships() []*Relationship {
-	return p.relationships
 }
 
 // URI returns the URI of the part.
