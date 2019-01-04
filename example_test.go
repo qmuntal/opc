@@ -15,7 +15,11 @@ func ExampleWriter() {
 	w := gopc.NewWriter(buf)
 
 	// Create a new OPC part.
-	part, err := w.Create("/readme.txt", "text/plain", gopc.CompressionNormal)
+	name, err := gopc.NormalizePartName("docs\\readme.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	part, err := w.Create(name, "text/plain", gopc.CompressionNormal)
 	if err != nil {
 		log.Fatal(err)
 	}
