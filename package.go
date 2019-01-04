@@ -3,6 +3,8 @@
 // The Open Packaging specification describes an abstract model and physical format conventions for the use of
 // XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and
 // resources of a document within a package.
+//
+// The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
 package gopc
 
 import (
