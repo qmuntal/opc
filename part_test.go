@@ -1,6 +1,7 @@
 package gopc
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -171,7 +172,7 @@ func TestNormalizePartName(t *testing.T) {
 		{"empty", args{""}, "", true},
 		{"onlyslash", args{"/"}, "", true},
 		{"invalidURL", args{"/docs%/a.xml"}, "", true},
-		{"abs", args{"http://a.com/docs%/a.xml"}, "", true},
+		{"abs", args{"http://a.com/docs/a.xml"}, "", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -182,6 +183,62 @@ func TestNormalizePartName(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("NormalizePartName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPart_Write(t *testing.T) {
+	type args struct {
+		b []byte
+	}
+	tests := []struct {
+		name    string
+		p       *Part
+		args    args
+		wantN   int
+		wantErr bool
+	}{
+		{"base", &Part{w: &bytes.Buffer{}}, args{([]byte)("test")}, 4, false},
+		{"nowrite", &Part{}, args{([]byte)("test")}, 0, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotN, err := tt.p.Write(tt.args.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Part.Write() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotN != tt.wantN {
+				t.Errorf("Part.Write() = %v, want %v", gotN, tt.wantN)
+			}
+		})
+	}
+}
+
+func TestPart_Read(t *testing.T) {
+	type args struct {
+		b []byte
+	}
+	tests := []struct {
+		name    string
+		p       *Part
+		args    args
+		wantN   int
+		wantErr bool
+	}{
+		{"base", &Part{r: bytes.NewBufferString("test")}, args{make([]byte, 5)}, 4, false},
+		{"empty", &Part{}, args{make([]byte, 5)}, 0, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotN, err := tt.p.Read(tt.args.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Part.Read() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotN != tt.wantN {
+				t.Errorf("Part.Read() = %v, want %v", gotN, tt.wantN)
 			}
 		})
 	}

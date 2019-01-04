@@ -2,6 +2,7 @@ package gopc
 
 import (
 	"errors"
+	"io"
 	"mime"
 	"net/url"
 	"path/filepath"
@@ -143,6 +144,8 @@ type Part struct {
 	uri               string
 	contentType       string
 	compressionOption CompressionOption
+	w                 io.Writer
+	r                 io.Reader
 }
 
 // newPart creates a new part.
@@ -180,4 +183,18 @@ func (p *Part) ContentType() string {
 // CompressionOption returns the CompressionOption of the part.
 func (p *Part) CompressionOption() CompressionOption {
 	return p.compressionOption
+}
+
+func (p *Part) Write(b []byte) (n int, err error) {
+	if p.w == nil {
+		return 0, errors.New("OPC: part does not have write access")
+	}
+	return p.w.Write(b)
+}
+
+func (p *Part) Read(b []byte) (n int, err error) {
+	if p.r == nil {
+		return 0, errors.New("OPC: part does not have read access")
+	}
+	return p.r.Read(b)
 }

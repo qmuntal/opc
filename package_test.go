@@ -20,7 +20,7 @@ func createFakePackage(m ...string) *Package {
 	}
 }
 
-func TestPackage_CreatePart(t *testing.T) {
+func TestPackage_create(t *testing.T) {
 	type args struct {
 		uri               string
 		contentType       string
@@ -41,13 +41,13 @@ func TestPackage_CreatePart(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.p.CreatePart(tt.args.uri, tt.args.contentType, tt.args.compressionOption)
+			got, err := tt.p.create(tt.args.uri, tt.args.contentType, tt.args.compressionOption)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Package.CreatePart() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Package.create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Package.CreatePart() = %v, want %v", got, tt.want)
+				t.Errorf("Package.create() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -69,6 +69,28 @@ func Test_newPackage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := newPackage(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("newPackage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPackage_deletePart(t *testing.T) {
+	type args struct {
+		uri string
+	}
+	tests := []struct {
+		name string
+		p    *Package
+		args args
+	}{
+		{"empty", newPackage(), args{fakeURL}},
+		{"existing", createFakePackage(fakeURL), args{fakeURL}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.p.deletePart(tt.args.uri)
+			if _, ok := tt.p.parts[strings.ToUpper(tt.args.uri)]; ok {
+				t.Error("Package.deletePart() should have deleted the part")
 			}
 		})
 	}

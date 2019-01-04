@@ -126,7 +126,7 @@ func Test_newRelationship(t *testing.T) {
 	}
 }
 
-func Test_relationer_CreateRelationship(t *testing.T) {
+func Test_relationer_createRelationship(t *testing.T) {
 	type args struct {
 		id         string
 		relType    string
@@ -146,13 +146,13 @@ func Test_relationer_CreateRelationship(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.r.CreateRelationship(tt.args.id, tt.args.relType, tt.args.targetURI, tt.args.targetMode)
+			got, err := tt.r.createRelationship(tt.args.id, tt.args.relType, tt.args.targetURI, tt.args.targetMode)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("relationer.CreateRelationship() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("relationer.createRelationship() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("relationer.CreateRelationship() = %v, want %v", got, tt.want)
+				t.Errorf("relationer.createRelationship() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -185,7 +185,7 @@ func Test_isRelationshipURI(t *testing.T) {
 	}
 }
 
-func Test_relationer_Relationships(t *testing.T) {
+func Test_relationer_relationships(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *relationer
@@ -195,14 +195,14 @@ func Test_relationer_Relationships(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.Relationships(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("relationer.Relationships() = %v, want %v", got, tt.want)
+			if got := tt.r.relationships(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("relationer.relationships() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_relationer_HasRelationship(t *testing.T) {
+func Test_relationer_hasRelationship(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *relationer
@@ -213,8 +213,68 @@ func Test_relationer_HasRelationship(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.HasRelationship(); got != tt.want {
-				t.Errorf("relationer.HasRelationship() = %v, want %v", got, tt.want)
+			if got := tt.r.hasRelationship(); got != tt.want {
+				t.Errorf("relationer.hasRelationship() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_relationer_deleteRelationship(t *testing.T) {
+	type args struct {
+		id string
+	}
+	tests := []struct {
+		name string
+		r    *relationer
+		args args
+	}{
+		{"empty", &relationer{"/", map[string]*Relationship{}}, args{"/a"}},
+		{"existing", &relationer{"/", map[string]*Relationship{"/a": new(Relationship)}}, args{"/a"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.deleteRelationship(tt.args.id)
+			if _, ok := tt.r.relationshipsMap[tt.args.id]; ok {
+				t.Error("relationer.deleteRelationship() should have deleted the relationship")
+			}
+		})
+	}
+}
+
+func Test_relationer_clearRelationships(t *testing.T) {
+	tests := []struct {
+		name string
+		r    *relationer
+	}{
+		{"base", &relationer{"/", map[string]*Relationship{"/a": new(Relationship), "/b": new(Relationship)}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.clearRelationships()
+			if len(tt.r.relationshipsMap) != 0 {
+				t.Error("relationer.clearRelationships() should have deleted all the relationships")
+			}
+		})
+	}
+}
+
+func Test_relationer_writeRelationships(t *testing.T) {
+	type args struct {
+		e *xml.Encoder
+	}
+	tests := []struct {
+		name    string
+		r       *relationer
+		args    args
+		wantErr bool
+	}{
+		{"base", &relationer{}, args{nil}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.r.writeRelationships(tt.args.e); (err != nil) != tt.wantErr {
+				t.Errorf("relationer.writeRelationships() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

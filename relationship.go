@@ -97,7 +97,7 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 		if err != nil || source.String() == "" {
 			result = errors.New("OPC: relationship source URI reference shall be a URI or a relative reference")
 		} else if isRelationshipURI(source.ResolveReference(uri).String()) {
-			result = errors.New("OPC: The Relationships part shall not have relationships to any other part")
+			result = errors.New("OPC: The relationships part shall not have relationships to any other part")
 		}
 	}
 
@@ -157,30 +157,44 @@ func (r *Relationship) writeToXML(e *xml.Encoder) error {
 }
 
 type relationer struct {
-	sourceURI     string
-	relationships map[string]*Relationship
+	sourceURI        string
+	relationshipsMap map[string]*Relationship
 }
 
-func (r *relationer) CreateRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
-	if _, ok := r.relationships[id]; ok {
+func (r *relationer) createRelationship(id, relType, targetURI string, targetMode TargetMode) (*Relationship, error) {
+	if _, ok := r.relationshipsMap[id]; ok {
 		return nil, errors.New("OPC: relationship ID shall be unique within the Relationship part")
 	}
 	rel, err := newRelationship(id, relType, r.sourceURI, targetURI, targetMode)
 	if err != nil {
 		return nil, err
 	}
-	r.relationships[id] = rel
+	r.relationshipsMap[id] = rel
 	return rel, nil
 }
 
-func (r *relationer) HasRelationship() bool {
-	return len(r.relationships) > 0
+func (r *relationer) clearRelationships() {
+	for id := range r.relationshipsMap {
+		r.deleteRelationship(id)
+	}
 }
 
-func (r *relationer) Relationships() []*Relationship {
-	v := make([]*Relationship, 0, len(r.relationships))
-	for _, rel := range r.relationships {
+func (r *relationer) deleteRelationship(id string) {
+	delete(r.relationshipsMap, id)
+}
+
+func (r *relationer) hasRelationship() bool {
+	return len(r.relationshipsMap) > 0
+}
+
+func (r *relationer) relationships() []*Relationship {
+	v := make([]*Relationship, 0, len(r.relationshipsMap))
+	for _, rel := range r.relationshipsMap {
 		v = append(v, rel)
 	}
 	return v
+}
+
+func (r *relationer) writeRelationships(e *xml.Encoder) error {
+	return nil
 }

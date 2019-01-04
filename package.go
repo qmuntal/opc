@@ -21,7 +21,6 @@ type Package struct {
 	relationships map[string]*Relationship
 }
 
-// newPackage returns a new initilized Package.
 func newPackage() *Package {
 	return &Package{
 		relationer:    relationer{"/", make(map[string]*Relationship, 0)},
@@ -30,24 +29,36 @@ func newPackage() *Package {
 	}
 }
 
-// CreatePart adds a new Part to the Package.
-// The part URI shall be a valid part name, one can use NormalizePartName before calling CreatePart to normalize the URI as a part name.
-func (p *Package) CreatePart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
-	upperURI := strings.ToUpper(uri)
-	if _, ok := p.parts[upperURI]; ok {
-		return nil, errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names [M1.12]")
-	}
-
-	if p.checkPrefixCollision(upperURI) {
-		return nil, errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it [M1.11]")
-	}
-
+func (p *Package) create(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
 	part, err := newPart(uri, contentType, compressionOption)
 	if err != nil {
 		return nil, err
 	}
-	p.parts[upperURI] = part
+	if err = p.add(part); err != nil {
+		return nil, err
+	}
 	return part, nil
+}
+
+func (p *Package) add(part *Part) error {
+	upperURI := strings.ToUpper(part.uri)
+	if _, ok := p.parts[upperURI]; ok {
+		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names [M1.12]")
+	}
+
+	if p.checkPrefixCollision(upperURI) {
+		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it [M1.11]")
+	}
+
+	return nil
+}
+
+func (p *Package) deletePart(uri string) {
+	upperURI := strings.ToUpper(uri)
+	if part, ok := p.parts[upperURI]; ok {
+		part.clearRelationships()
+		delete(p.parts, upperURI)
+	}
 }
 
 func (p *Package) checkPrefixCollision(uri string) bool {
