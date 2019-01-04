@@ -55,7 +55,7 @@ func (w *Writer) Create(uri, contentType string, compressionOption CompressionOp
 // Copy an existing readable Part to the Package.
 // The Part will be read until EOF and it won't be readable again.
 func (w *Writer) Copy(part *Part) error {
-	if part.r != nil {
+	if part.r == nil {
 		return errors.New("OPC: part cannot be copied because it does not have read access")
 	}
 	if err := w.Package.add(part); err != nil {

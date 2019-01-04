@@ -43,11 +43,10 @@ func (p *Package) add(part *Part) error {
 	if _, ok := p.parts[upperURI]; ok {
 		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names [M1.12]")
 	}
-
 	if p.checkPrefixCollision(upperURI) {
 		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it [M1.11]")
 	}
-
+	p.parts[upperURI] = part
 	return nil
 }
 

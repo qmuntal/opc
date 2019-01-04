@@ -47,6 +47,12 @@ func TestPackage_create(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Package.create() = %v, want %v", got, tt.want)
+				return
+			}
+			if !tt.wantErr {
+				if _, ok := tt.p.parts[strings.ToUpper(tt.want.uri)]; !ok {
+					t.Error("Package.create() have not added the new part")
+				}
 			}
 		})
 	}

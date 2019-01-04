@@ -3,6 +3,7 @@ package gopc
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -104,6 +105,86 @@ func Test_compressionFunc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			compressionFunc(tt.args.comp)(&bytes.Buffer{})
+		})
+	}
+}
+
+func TestWriter_Copy(t *testing.T) {
+	w := NewWriter(&bytes.Buffer{})
+	w.Package.add(&Part{uri: "/b.xml", r: &bytes.Buffer{}})
+	w1 := NewWriter(&bytes.Buffer{})
+	w1.last = &Part{uri: "/b.xml", r: &bytes.Buffer{}}
+	type args struct {
+		part *Part
+	}
+	tests := []struct {
+		name    string
+		w       *Writer
+		args    args
+		wantErr bool
+	}{
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a" + (string)(make([]byte, 1<<16+1)) + ".xml", r: &bytes.Buffer{}}}, true},
+		{"duplicated", w, args{&Part{uri: "/b.xml", r: &bytes.Buffer{}}}, true},
+		{"noread", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a.xml"}}, true},
+		{"copyErr", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a.xml", r: &BuffErr{}}}, true},
+		{"valid", w1, args{&Part{uri: "/a.xml", r: &bytes.Buffer{}}}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.w.Copy(tt.args.part); (err != nil) != tt.wantErr {
+				t.Errorf("Writer.Copy() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+type BuffErr struct {
+}
+
+func (e *BuffErr) Read(b []byte) (n int, err error) {
+	return 0, errors.New("")
+}
+
+func TestWriter_Create(t *testing.T) {
+	strName := "/a.doc"
+	for i := 0; i < 1<<16+1; i++ {
+		strName += "a"
+	}
+
+	type args struct {
+		uri               string
+		contentType       string
+		compressionOption CompressionOption
+	}
+	tests := []struct {
+		name    string
+		w       *Writer
+		args    args
+		want    *Part
+		wantErr bool
+	}{
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b", CompressionNone}, nil, true},
+		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b", CompressionNone}, nil, true},
+		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b", CompressionNone}, createFakePart("/a.xml", "a/b"), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.w.Create(tt.args.uri, tt.args.contentType, tt.args.compressionOption)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Writer.Create() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				if got.w == nil {
+					t.Error("Writer.Create() should have set a writer to the part")
+					return
+				}
+				got.w = nil
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Writer.Create() = %v, want %v", got, tt.want)
+				}
+
+			}
 		})
 	}
 }
