@@ -109,35 +109,6 @@ func Test_compressionFunc(t *testing.T) {
 	}
 }
 
-func TestWriter_Copy(t *testing.T) {
-	w := NewWriter(&bytes.Buffer{})
-	w.Package.add(&Part{uri: "/b.xml", r: &bytes.Buffer{}})
-	w1 := NewWriter(&bytes.Buffer{})
-	w1.last = &Part{uri: "/b.xml", r: &bytes.Buffer{}}
-	type args struct {
-		part *Part
-	}
-	tests := []struct {
-		name    string
-		w       *Writer
-		args    args
-		wantErr bool
-	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a" + (string)(make([]byte, 1<<16+1)) + ".xml", r: &bytes.Buffer{}}}, true},
-		{"duplicated", w, args{&Part{uri: "/b.xml", r: &bytes.Buffer{}}}, true},
-		{"noread", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a.xml"}}, true},
-		{"copyErr", NewWriter(&bytes.Buffer{}), args{&Part{uri: "/a.xml", r: &BuffErr{}}}, true},
-		{"valid", w1, args{&Part{uri: "/a.xml", r: &bytes.Buffer{}}}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.w.Copy(tt.args.part); (err != nil) != tt.wantErr {
-				t.Errorf("Writer.Copy() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 type BuffErr struct {
 }
 
