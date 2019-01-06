@@ -18,30 +18,21 @@ import (
 // The package is also capable of storing relationships between parts.
 // Defined in ISO/IEC 29500-2 §9.
 type Package struct {
-	relationer
-	parts map[string]*Part
+	parts         map[string]*Part
+	Relationships []*Relationship
 }
 
 func newPackage() *Package {
 	return &Package{
-		relationer: relationer{"/", make(map[string]*Relationship, 0)},
-		parts:      make(map[string]*Part, 0),
+		parts: make(map[string]*Part, 0),
 	}
-}
-
-func (p *Package) create(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
-	part, err := newPart(uri, contentType, compressionOption)
-	if err != nil {
-		return nil, err
-	}
-	if err = p.add(part); err != nil {
-		return nil, err
-	}
-	return part, nil
 }
 
 func (p *Package) add(part *Part) error {
-	upperURI := strings.ToUpper(part.uri)
+	if err := part.validate(); err != nil {
+		return err
+	}
+	upperURI := strings.ToUpper(part.Name)
 	if _, ok := p.parts[upperURI]; ok {
 		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names [M1.12]")
 	}
@@ -53,11 +44,7 @@ func (p *Package) add(part *Part) error {
 }
 
 func (p *Package) deletePart(uri string) {
-	upperURI := strings.ToUpper(uri)
-	if part, ok := p.parts[upperURI]; ok {
-		part.clearRelationships()
-		delete(p.parts, upperURI)
-	}
+	delete(p.parts, strings.ToUpper(uri))
 }
 
 func (p *Package) checkPrefixCollision(uri string) bool {

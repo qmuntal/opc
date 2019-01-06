@@ -2,7 +2,6 @@ package gopc
 
 import (
 	"errors"
-	"io"
 	"mime"
 	"net/url"
 	"path/filepath"
@@ -140,61 +139,20 @@ const (
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
 // Defined in ISO/IEC 29500-2 §9.1.
 type Part struct {
-	relationer
-	uri               string
-	contentType       string
-	compressionOption CompressionOption
-	w                 io.Writer
-	r                 io.Reader
+	Name          string
+	ContentType   string
+	Relationships []*Relationship
 }
 
-// newPart creates a new part.
-func newPart(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
-	if err := validatePartName(uri); err != nil {
-		return nil, err
+func (p *Part) validate() error {
+	if err := validatePartName(p.Name); err != nil {
+		return err
 	}
 
-	if !strings.Contains(contentType, "/") {
-		return nil, errors.New("OPC: expected slash in content type")
+	if !strings.Contains(p.ContentType, "/") {
+		return errors.New("OPC: expected slash in content type")
 	}
 
-	mediatype, params, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Part{
-		relationer:        relationer{uri, make(map[string]*Relationship, 0)},
-		uri:               uri,
-		contentType:       mime.FormatMediaType(mediatype, params),
-		compressionOption: compressionOption}, nil
-}
-
-// URI returns the URI of the part.
-func (p *Part) URI() string {
-	return p.uri
-}
-
-// ContentType returns the ContentType of the part.
-func (p *Part) ContentType() string {
-	return p.contentType
-}
-
-// CompressionOption returns the CompressionOption of the part.
-func (p *Part) CompressionOption() CompressionOption {
-	return p.compressionOption
-}
-
-func (p *Part) Write(b []byte) (n int, err error) {
-	if p.w == nil {
-		return 0, errors.New("OPC: part does not have write access")
-	}
-	return p.w.Write(b)
-}
-
-func (p *Part) Read(b []byte) (n int, err error) {
-	if p.r == nil {
-		return 0, errors.New("OPC: part does not have read access")
-	}
-	return p.r.Read(b)
+	_, _, err := mime.ParseMediaType(p.ContentType)
+	return err
 }

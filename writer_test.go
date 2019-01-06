@@ -3,7 +3,6 @@ package gopc
 import (
 	"archive/zip"
 	"bytes"
-	"errors"
 	"reflect"
 	"testing"
 )
@@ -14,7 +13,7 @@ func TestNewWriter(t *testing.T) {
 		want  *Writer
 		wantW string
 	}{
-		{"base", &Writer{Package: newPackage(), w: zip.NewWriter(&bytes.Buffer{})}, ""},
+		{"base", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{})}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,7 +52,6 @@ func TestWriter_Close(t *testing.T) {
 		wantErr bool
 	}{
 		{"base", NewWriter(&bytes.Buffer{}), false},
-		{"withLast", &Writer{Package: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{relationer: relationer{}}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -109,13 +107,6 @@ func Test_compressionFunc(t *testing.T) {
 	}
 }
 
-type BuffErr struct {
-}
-
-func (e *BuffErr) Read(b []byte) (n int, err error) {
-	return 0, errors.New("")
-}
-
 func TestWriter_Create(t *testing.T) {
 	strName := "/a.doc"
 	for i := 0; i < 1<<16+1; i++ {
@@ -131,12 +122,11 @@ func TestWriter_Create(t *testing.T) {
 		name    string
 		w       *Writer
 		args    args
-		want    *Part
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b", CompressionNone}, nil, true},
-		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b", CompressionNone}, nil, true},
-		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b", CompressionNone}, createFakePart("/a.xml", "a/b"), false},
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b", CompressionNone}, true},
+		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b", CompressionNone}, true},
+		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b", CompressionNone}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -145,16 +135,8 @@ func TestWriter_Create(t *testing.T) {
 				t.Errorf("Writer.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr {
-				if got.w == nil {
-					t.Error("Writer.Create() should have set a writer to the part")
-					return
-				}
-				got.w = nil
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("Writer.Create() = %v, want %v", got, tt.want)
-				}
-
+			if !tt.wantErr && got == nil {
+				t.Error("Writer.Create() want writer")
 			}
 		})
 	}

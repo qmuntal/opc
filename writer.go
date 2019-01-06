@@ -9,14 +9,13 @@ import (
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	Package *Package
-	w       *zip.Writer
-	last    *Part
+	p *Package
+	w *zip.Writer
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
 func NewWriter(w io.Writer) *Writer {
-	return &Writer{Package: newPackage(), w: zip.NewWriter(w)}
+	return &Writer{p: newPackage(), w: zip.NewWriter(w)}
 }
 
 // Flush flushes any buffered data to the underlying writer.
@@ -30,45 +29,32 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
-	if w.last != nil {
-		w.last.writeRelationships(nil)
-		w.last = nil
-	}
 	return w.w.Close()
 }
 
 // Create adds a new Part to the Package. The part's contents must be written before the next call to Create or Close.
 // The part URI shall be a valid part name, one can use NormalizePartName before calling Create to normalize the URI as a part name.
-func (w *Writer) Create(uri, contentType string, compressionOption CompressionOption) (*Part, error) {
-	part, err := w.Package.create(uri, contentType, compressionOption)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = w.add(part); err != nil {
-		return nil, err
-	}
-	return part, nil
+func (w *Writer) Create(uri, contentType string, compression CompressionOption) (io.Writer, error) {
+	part := &Part{Name: uri, ContentType: contentType}
+	return w.add(part, compression)
 }
 
-func (w *Writer) add(part *Part) error {
-	if w.last != nil {
-		w.last.writeRelationships(nil)
+func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {
+	if err := w.p.add(part); err != nil {
+		return nil, err
 	}
 
 	fh := &zip.FileHeader{
-		Name:     part.uri[1:], // remove first "/"
+		Name:     part.Name[1:], // remove first "/"
 		Modified: time.Now(),
 	}
-	w.setCompressor(fh, part.compressionOption)
+	w.setCompressor(fh, compression)
 	pw, err := w.w.CreateHeader(fh)
 	if err != nil {
-		w.Package.deletePart(part.uri)
-		return err
+		w.p.deletePart(part.Name)
+		return nil, err
 	}
-	part.w = pw
-	w.last = part
-	return nil
+	return pw, nil
 }
 
 func (w *Writer) setCompressor(fh *zip.FileHeader, compression CompressionOption) {
