@@ -7,57 +7,6 @@ import (
 	"testing"
 )
 
-func TestRelationship_ID(t *testing.T) {
-	tests := []struct {
-		name string
-		r    *Relationship
-		want string
-	}{
-		{"id", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeInternal}, "fakeId"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.ID(); got != tt.want {
-				t.Errorf("Relationship.ID() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRelationship_Type(t *testing.T) {
-	tests := []struct {
-		name string
-		r    *Relationship
-		want string
-	}{
-		{"id", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeInternal}, "fakeType"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.Type(); got != tt.want {
-				t.Errorf("Relationship.Type() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRelationship_TargetURI(t *testing.T) {
-	tests := []struct {
-		name string
-		r    *Relationship
-		want string
-	}{
-		{"id", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeInternal}, "fakeTarget"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.TargetURI(); got != tt.want {
-				t.Errorf("Relationship.TargetURI() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestRelationship_writeToXML(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -86,46 +35,6 @@ func TestRelationship_writeToXML(t *testing.T) {
 	}
 }
 
-func Test_newRelationship(t *testing.T) {
-	type args struct {
-		id         string
-		relType    string
-		sourceURI  string
-		targetURI  string
-		targetMode TargetMode
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Relationship
-		wantErr bool
-	}{
-		{"internalRelRel", args{"fakeId", "fakeType", "/", "/_rels/.rels", ModeInternal}, nil, true},
-		{"internalRelNoSource", args{"fakeId", "fakeType", "", "/fakeTarget", ModeInternal}, nil, true},
-		{"invalidTarget2", args{"fakeId", "fakeType", "", "  ", ModeInternal}, nil, true},
-		{"new", args{"fakeId", "fakeType", "", "fakeTarget", ModeExternal}, &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeExternal}, false},
-		{"abs", args{"fakeId", "fakeType", "", "http://a.com/b", ModeExternal}, &Relationship{"fakeId", "fakeType", "", "http://a.com/b", ModeExternal}, false},
-		{"invalid", args{"fakeId", "fakeType", "", "://a.com/b", ModeExternal}, nil, true},
-		{"invalidID", args{"  ", "fakeType", "", "http://a.com/b", ModeInternal}, nil, true},
-		{"invalidAbsTarget", args{"fakeId", "fakeType", "", "http://a.com/b", ModeInternal}, nil, true},
-		{"invalidTarget", args{"fakeId", "fakeType", "", "", ModeInternal}, nil, true},
-		{"invalidRel1", args{"fakeId", "", "", "fakeTarget", ModeInternal}, nil, true},
-		{"invalidRel2", args{"fakeId", " ", "", "fakeTarget", ModeInternal}, nil, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := newRelationship(tt.args.id, tt.args.relType, tt.args.sourceURI, tt.args.targetURI, tt.args.targetMode)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("newRelationship() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newRelationship() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_isRelationshipURI(t *testing.T) {
 	type args struct {
 		uri string
@@ -148,6 +57,33 @@ func Test_isRelationshipURI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isRelationshipURI(tt.args.uri); got != tt.want {
 				t.Errorf("IsRelationshipURI() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRelationship_validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		r       *Relationship
+		wantErr bool
+	}{
+		{"new", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeExternal}, false},
+		{"abs", &Relationship{"fakeId", "fakeType", "", "http://a.com/b", ModeExternal}, false},
+		{"internalRelRel", &Relationship{"fakeId", "fakeType", "/", "/_rels/.rels", ModeInternal}, true},
+		{"internalRelNoSource", &Relationship{"fakeId", "fakeType", "", "/fakeTarget", ModeInternal}, true},
+		{"invalidTarget2", &Relationship{"fakeId", "fakeType", "", "  ", ModeInternal}, true},
+		{"invalid", &Relationship{"fakeId", "fakeType", "", "://a.com/b", ModeExternal}, true},
+		{"invalidID", &Relationship{"  ", "fakeType", "", "http://a.com/b", ModeInternal}, true},
+		{"invalidAbsTarget", &Relationship{"fakeId", "fakeType", "", "http://a.com/b", ModeInternal}, true},
+		{"invalidTarget", &Relationship{"fakeId", "fakeType", "", "", ModeInternal}, true},
+		{"invalidRel1", &Relationship{"fakeId", "", "", "fakeTarget", ModeInternal}, true},
+		{"invalidRel2", &Relationship{"fakeId", " ", "", "fakeTarget", ModeInternal}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.r.validate(); (err != nil) != tt.wantErr {
+				t.Errorf("Relationship.validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
