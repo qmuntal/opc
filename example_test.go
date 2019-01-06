@@ -19,7 +19,7 @@ func ExampleWriter() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	part, err := w.Create(name, "text/plain", gopc.CompressionNormal)
+	part, err := w.Create(name, "text/plain")
 	if err != nil {
 		log.Fatal(err)
 	}

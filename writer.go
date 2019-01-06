@@ -32,10 +32,20 @@ func (w *Writer) Close() error {
 	return w.w.Close()
 }
 
-// Create adds a new Part to the Package. The part's contents must be written before the next call to Create or Close.
-// The part URI shall be a valid part name, one can use NormalizePartName before calling Create to normalize the URI as a part name.
-func (w *Writer) Create(uri, contentType string, compression CompressionOption) (io.Writer, error) {
-	part := &Part{Name: uri, ContentType: contentType}
+// Create adds a file to the OPC archive using the provided name and content type.
+// It returns a Writer to which the file contents should be written.
+// The file contents will be compressed using the Deflate default method.
+// The name URI shall be a valid part name, one can use NormalizePartName before calling Create to normalize the part name.
+// The part's contents must be written before the next call to Create or Close.
+func (w *Writer) Create(name, contentType string) (io.Writer, error) {
+	part := &Part{Name: name, ContentType: contentType}
+	return w.add(part, CompressionNormal)
+}
+
+// CreatePart adds a file to the OPC archive using the provided part.
+// Writer takes ownership of part and may mutate its fields.
+// The caller must not modify part after calling CreatePart.
+func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Writer, error) {
 	return w.add(part, compression)
 }
 

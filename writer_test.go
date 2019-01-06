@@ -114,9 +114,8 @@ func TestWriter_Create(t *testing.T) {
 	}
 
 	type args struct {
-		uri               string
-		contentType       string
-		compressionOption CompressionOption
+		uri         string
+		contentType string
 	}
 	tests := []struct {
 		name    string
@@ -124,19 +123,52 @@ func TestWriter_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b", CompressionNone}, true},
-		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b", CompressionNone}, true},
-		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b", CompressionNone}, false},
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b"}, true},
+		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b"}, true},
+		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.w.Create(tt.args.uri, tt.args.contentType, tt.args.compressionOption)
+			got, err := tt.w.Create(tt.args.uri, tt.args.contentType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Writer.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr && got == nil {
 				t.Error("Writer.Create() want writer")
+			}
+		})
+	}
+}
+
+func TestWriter_CreatePart(t *testing.T) {
+	strName := "/a.doc"
+	for i := 0; i < 1<<16+1; i++ {
+		strName += "a"
+	}
+	type args struct {
+		part        *Part
+		compression CompressionOption
+	}
+	tests := []struct {
+		name    string
+		w       *Writer
+		args    args
+		wantErr bool
+	}{
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{strName, "a/b", nil}, CompressionNone}, true},
+		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
+		{"base", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.w.CreatePart(tt.args.part, tt.args.compression)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Writer.CreatePart() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got == nil {
+				t.Error("Writer.CreatePart want a valid writer")
 			}
 		})
 	}
