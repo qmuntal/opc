@@ -45,6 +45,44 @@ func NormalizePartName(name string) (string, error) {
 	return p.EscapedPath(), nil
 }
 
+// CompressionOption is an enumerable for the different compression options.
+type CompressionOption int
+
+const (
+	// CompressionNone disables the compression.
+	CompressionNone CompressionOption = iota - 1
+	// CompressionNormal is optimized for a reasonable compromise between size and performance.
+	CompressionNormal
+	// CompressionMaximum is optimized for size.
+	CompressionMaximum
+	// CompressionFast is optimized for performance.
+	CompressionFast
+	// CompressionSuperFast is optimized for super performance.
+	CompressionSuperFast
+)
+
+// A part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
+// Parts are analogous to a file in a file system or to a resource on an HTTP server.
+// The part properties will be validated before writing or reading from disk.
+type Part struct {
+	Name          string          // The name of the part.
+	ContentType   string          // The type of content stored in the part.
+	Relationships []*Relationship // The relationships associated to the part.
+}
+
+func (p *Part) validate() error {
+	if err := validatePartName(p.Name); err != nil {
+		return err
+	}
+
+	if !strings.Contains(p.ContentType, "/") {
+		return errors.New("OPC: expected slash in content type")
+	}
+
+	_, _, err := mime.ParseMediaType(p.ContentType)
+	return err
+}
+
 func validatePartName(name string) error {
 	// ISO/IEC 29500-2 M1.1
 	if strings.TrimSpace(name) == "" {
@@ -117,42 +155,4 @@ func validateSegments(name string) error {
 		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters")
 	}
 	return nil
-}
-
-// CompressionOption is an enumerable for the different compression options.
-type CompressionOption int
-
-const (
-	// CompressionNone disables the compression.
-	CompressionNone CompressionOption = iota - 1
-	// CompressionNormal is optimized for a reasonable compromise between size and performance.
-	CompressionNormal
-	// CompressionMaximum is optimized for size.
-	CompressionMaximum
-	// CompressionFast is optimized for performance.
-	CompressionFast
-	// CompressionSuperFast is optimized for super performance.
-	CompressionSuperFast
-)
-
-// A part is a stream of bytes whose main properties are the name and the content type.
-// Parts are analogous to a file in a file system or to a resource on an HTTP server.
-// Defined in ISO/IEC 29500-2 §9.1.
-type Part struct {
-	Name          string
-	ContentType   string
-	Relationships []*Relationship
-}
-
-func (p *Part) validate() error {
-	if err := validatePartName(p.Name); err != nil {
-		return err
-	}
-
-	if !strings.Contains(p.ContentType, "/") {
-		return errors.New("OPC: expected slash in content type")
-	}
-
-	_, _, err := mime.ParseMediaType(p.ContentType)
-	return err
 }

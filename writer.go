@@ -35,7 +35,7 @@ func (w *Writer) Close() error {
 // Create adds a file to the OPC archive using the provided name and content type.
 // It returns a Writer to which the file contents should be written.
 // The file contents will be compressed using the Deflate default method.
-// The name URI shall be a valid part name, one can use NormalizePartName before calling Create to normalize the part name.
+// The name shall be a valid part name, one can use NormalizePartName before calling Create to normalize it.
 // The part's contents must be written before the next call to Create or Close.
 func (w *Writer) Create(name, contentType string) (io.Writer, error) {
 	part := &Part{Name: name, ContentType: contentType}
