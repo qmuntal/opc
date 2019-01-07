@@ -21,9 +21,9 @@ var defaultRef, _ = url.Parse("http://defaultcontainer/")
 // This method is recommended to be used before adding a new Part to a package to avoid errors.
 // If, for whatever reason, the name can't be adapted to the specs, the return value will be the same as the original.
 // Warning: This method can heavily modify the original if it differs a lot from the specs, which could led to duplicated part names.
-func NormalizePartName(name string) (string, error) {
+func NormalizePartName(name string) string {
 	if str := strings.TrimSpace(name); str == "" || str == "/" {
-		return "", errors.New("OPC: a part URI shall not be empty")
+		return name
 	}
 
 	normalized := strings.Replace(filepath.ToSlash(name), "//", "/", -1)
@@ -33,16 +33,16 @@ func NormalizePartName(name string) (string, error) {
 
 	encodedURL, err := url.Parse(normalized)
 	if err != nil {
-		return "", err
+		return name
 	}
 
 	if encodedURL.IsAbs() {
-		return "", errors.New("OPC: a part URI shall be relative")
+		return name
 	}
 
 	// Normalize url, decode unnecessary escapes and encode necessary
 	p, _ := url.Parse(defaultRef.ResolveReference(encodedURL).Path)
-	return p.EscapedPath(), nil
+	return p.EscapedPath()
 }
 
 // CompressionOption is an enumerable for the different compression options.

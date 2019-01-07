@@ -9,36 +9,31 @@ func TestNormalizePartName(t *testing.T) {
 		name string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		args args
+		want string
 	}{
-		{"base", args{"/a.xml"}, "/a.xml", false},
-		{"onedot", args{"/./a.xml"}, "/a.xml", false},
-		{"doubledot", args{"/../a.xml"}, "/a.xml", false},
-		{"noslash", args{"a.xml"}, "/a.xml", false},
-		{"folder", args{"/docs/a.xml"}, "/docs/a.xml", false},
-		{"noext", args{"/docs"}, "/docs", false},
-		{"win", args{"\\docs\\a.xml"}, "/docs/a.xml", false},
-		{"winnoslash", args{"docs\\a.xml"}, "/docs/a.xml", false},
-		{"fragment", args{"/docs/a.xml#a"}, "/docs/a.xml", false},
-		{"twoslash", args{"//docs/a.xml"}, "/docs/a.xml", false},
-		{"necessaryEscaped", args{"//docs/!\".xml"}, "/docs/%21%22.xml", false},
-		{"unecessaryEscaped", args{"//docs/%41.xml"}, "/docs/A.xml", false},
-		{"endslash", args{"/docs/a.xml/"}, "/docs/a.xml", false},
-		{"empty", args{""}, "", true},
-		{"onlyslash", args{"/"}, "", true},
-		{"invalidURL", args{"/docs%/a.xml"}, "", true},
-		{"abs", args{"http://a.com/docs/a.xml"}, "", true},
+		{"base", args{"/a.xml"}, "/a.xml"},
+		{"onedot", args{"/./a.xml"}, "/a.xml"},
+		{"doubledot", args{"/../a.xml"}, "/a.xml"},
+		{"noslash", args{"a.xml"}, "/a.xml"},
+		{"folder", args{"/docs/a.xml"}, "/docs/a.xml"},
+		{"noext", args{"/docs"}, "/docs"},
+		{"win", args{"\\docs\\a.xml"}, "/docs/a.xml"},
+		{"winnoslash", args{"docs\\a.xml"}, "/docs/a.xml"},
+		{"fragment", args{"/docs/a.xml#a"}, "/docs/a.xml"},
+		{"twoslash", args{"//docs/a.xml"}, "/docs/a.xml"},
+		{"necessaryEscaped", args{"//docs/!\".xml"}, "/docs/%21%22.xml"},
+		{"unecessaryEscaped", args{"//docs/%41.xml"}, "/docs/A.xml"},
+		{"endslash", args{"/docs/a.xml/"}, "/docs/a.xml"},
+		{"empty", args{""}, ""},
+		{"onlyslash", args{"/"}, "/"},
+		{"invalidURL", args{"/docs%/a.xml"}, "/docs%/a.xml"},
+		{"abs", args{"http://a.com/docs/a.xml"}, "http://a.com/docs/a.xml"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NormalizePartName(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NormalizePartName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := NormalizePartName(tt.args.name)
 			if got != tt.want {
 				t.Errorf("NormalizePartName() = %v, want %v", got, tt.want)
 			}
