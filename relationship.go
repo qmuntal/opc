@@ -1,8 +1,10 @@
 package gopc
 
 import (
+	"crypto/rand"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -36,17 +38,17 @@ const (
 )
 
 // Relationship is used to express a relationship between a source and a target part.
-// The only way to create a Relationship, is to call the Part.NewRelationship()
-// or Package.NewRelationship(). A relationship is owned by a part or by the package itself.
+// The only way to create a Relationship, is to call the Part.CreateRelationship()
+// or Package.CreateRelationship(). A relationship is owned by a part or by the package itself.
 // If the source part is deleted all the relationships it owns are also deleted.
 // A target of the relationship need not be present.
 // Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
-	id         string
-	relType    string
+	ID         string
+	RelType    string
+	TargetURI  string
+	TargetMode TargetMode
 	sourceURI  string
-	targetURI  string
-	targetMode TargetMode
 }
 
 type relationshipXML struct {
@@ -58,13 +60,13 @@ type relationshipXML struct {
 
 func (r *Relationship) validate() error {
 	// ISO/IEC 29500-2 M1.26
-	if strings.TrimSpace(r.id) == "" {
+	if strings.TrimSpace(r.ID) == "" {
 		return errors.New("OPC: relationship identifier cannot be empty string or a string with just spaces")
 	}
-	if strings.TrimSpace(r.relType) == "" {
+	if strings.TrimSpace(r.RelType) == "" {
 		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
 	}
-	if err := validateRelationshipTarget(r.sourceURI, r.targetURI, r.targetMode); err != nil {
+	if err := validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode); err != nil {
 		return err
 	}
 	return nil
@@ -72,11 +74,11 @@ func (r *Relationship) validate() error {
 
 func (r *Relationship) toXML() *relationshipXML {
 	var targetMode string
-	if r.targetMode == ModeExternal {
+	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
-	x := &relationshipXML{ID: r.id, RelType: r.relType, TargetURI: r.targetURI, Mode: targetMode}
-	if r.targetMode == ModeInternal {
+	x := &relationshipXML{ID: r.ID, RelType: r.RelType, TargetURI: r.TargetURI, Mode: targetMode}
+	if r.TargetMode == ModeInternal {
 		if !strings.HasPrefix(x.TargetURI, "/") && !strings.HasPrefix(x.TargetURI, "\\") && !strings.HasPrefix(x.TargetURI, ".") {
 			x.TargetURI = "/" + x.TargetURI
 		}
@@ -135,4 +137,10 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	}
 
 	return result
+}
+
+func uniqueRelationshipID() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
 }

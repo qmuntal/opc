@@ -14,10 +14,10 @@ func TestRelationship_writeToXML(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"xmlWriter", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
-		{"emptyURI", &Relationship{"fakeId", "fakeType", "", "", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/"></Relationship>`, false},
-		{"externalMode", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeExternal}, `<Relationship Id="fakeId" Type="fakeType" Target="fakeTarget" TargetMode="External"></Relationship>`, false},
-		{"base", &Relationship{"fakeId", "fakeType", "", "/fakeTarget", ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
+		{"xmlWriter", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
+		{"emptyURI", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/"></Relationship>`, false},
+		{"externalMode", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeExternal}, `<Relationship Id="fakeId" Type="fakeType" Target="fakeTarget" TargetMode="External"></Relationship>`, false},
+		{"base", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "/fakeTarget", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -68,17 +68,17 @@ func TestRelationship_validate(t *testing.T) {
 		r       *Relationship
 		wantErr bool
 	}{
-		{"new", &Relationship{"fakeId", "fakeType", "", "fakeTarget", ModeExternal}, false},
-		{"abs", &Relationship{"fakeId", "fakeType", "", "http://a.com/b", ModeExternal}, false},
-		{"internalRelRel", &Relationship{"fakeId", "fakeType", "/", "/_rels/.rels", ModeInternal}, true},
-		{"internalRelNoSource", &Relationship{"fakeId", "fakeType", "", "/fakeTarget", ModeInternal}, true},
-		{"invalidTarget2", &Relationship{"fakeId", "fakeType", "", "  ", ModeInternal}, true},
-		{"invalid", &Relationship{"fakeId", "fakeType", "", "://a.com/b", ModeExternal}, true},
-		{"invalidID", &Relationship{"  ", "fakeType", "", "http://a.com/b", ModeInternal}, true},
-		{"invalidAbsTarget", &Relationship{"fakeId", "fakeType", "", "http://a.com/b", ModeInternal}, true},
-		{"invalidTarget", &Relationship{"fakeId", "fakeType", "", "", ModeInternal}, true},
-		{"invalidRel1", &Relationship{"fakeId", "", "", "fakeTarget", ModeInternal}, true},
-		{"invalidRel2", &Relationship{"fakeId", " ", "", "fakeTarget", ModeInternal}, true},
+		{"new", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeExternal}, false},
+		{"abs", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "http://a.com/b", TargetMode: ModeExternal}, false},
+		{"internalRelRel", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "/", TargetURI: "/_rels/.rels", TargetMode: ModeInternal}, true},
+		{"internalRelNoSource", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "/fakeTarget", TargetMode: ModeInternal}, true},
+		{"invalidTarget2", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "  ", TargetMode: ModeInternal}, true},
+		{"invalid", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "://a.com/b", TargetMode: ModeExternal}, true},
+		{"invalidID", &Relationship{ID: "  ", RelType: "fakeType", sourceURI: "", TargetURI: "http://a.com/b", TargetMode: ModeInternal}, true},
+		{"invalidAbsTarget", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "http://a.com/b", TargetMode: ModeInternal}, true},
+		{"invalidTarget", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "", TargetMode: ModeInternal}, true},
+		{"invalidRel1", &Relationship{ID: "fakeId", RelType: "", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}, true},
+		{"invalidRel2", &Relationship{ID: "fakeId", RelType: " ", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
