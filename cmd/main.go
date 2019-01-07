@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	p.Relationships = append(p.Relationships, &gopc.Relationship{})
+	p.CreateRelationship("", "/asd/asd", "asdasda", gopc.ModeInternal)
 
 	// Create a new OPC part.
 	_, err = w.Create(gopc.NormalizePartName("hello.txt"), "text/plain")
