@@ -66,10 +66,7 @@ func (r *Relationship) validate() error {
 	if strings.TrimSpace(r.RelType) == "" {
 		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
 	}
-	if err := validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode); err != nil {
-		return err
-	}
-	return nil
+	return validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode)
 }
 
 func (r *Relationship) toXML() *relationshipXML {
