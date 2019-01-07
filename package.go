@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-// A package is a container that holds a collection of parts. The purpose of the package is to aggregate constituent
+// A Package is a container that holds a collection of parts. The purpose of the package is to aggregate constituent
 // components of a document (or other type of content) into a single object.
 // The package is also capable of storing relationships between parts.
 // Defined in ISO/IEC 29500-2 §9.

@@ -61,13 +61,31 @@ const (
 	CompressionSuperFast
 )
 
-// A part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
+// A Part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
 // The part properties will be validated before writing or reading from disk.
 type Part struct {
 	Name          string          // The name of the part.
 	ContentType   string          // The type of content stored in the part.
 	Relationships []*Relationship // The relationships associated to the part.
+}
+
+// CreateRelationship adds a new relationship to the Relationships slice.
+// The ID can be an empty string, if so a unique ID will be generated.
+// The input properties are not validated.
+func (p *Part) CreateRelationship(id, targetURI, relType string, targetMode TargetMode) *Relationship {
+	if id == "" {
+		id = uniqueRelationshipID()
+	}
+	r := &Relationship{
+		ID:         id,
+		RelType:    relType,
+		TargetURI:  targetURI,
+		TargetMode: targetMode,
+		sourceURI:  p.Name,
+	}
+	p.Relationships = append(p.Relationships, r)
+	return r
 }
 
 func (p *Part) validate() error {

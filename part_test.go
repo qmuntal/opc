@@ -1,6 +1,7 @@
 package gopc
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -78,6 +79,43 @@ func TestPart_validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.p.validate(); (err != nil) != tt.wantErr {
 				t.Errorf("Part.validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPart_CreateRelationship(t *testing.T) {
+	type args struct {
+		ID         string
+		targetURI  string
+		relType    string
+		targetMode TargetMode
+	}
+	tests := []struct {
+		name string
+		p    *Part
+		args args
+		want *Relationship
+	}{
+		{"base", &Part{Name: "/a.xml"}, args{"rel0", "/b.xml", "fake", ModeInternal}, &Relationship{ID: "rel0", RelType: "fake", TargetURI: "/b.xml", sourceURI: "/a.xml", TargetMode: ModeInternal}},
+		{"noid", &Part{Name: "/a.xml"}, args{"", "/b.xml", "fake", ModeInternal}, &Relationship{ID: "", RelType: "fake", TargetURI: "/b.xml", sourceURI: "/a.xml", TargetMode: ModeInternal}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.p.CreateRelationship(tt.args.ID, tt.args.targetURI, tt.args.relType, tt.args.targetMode)
+			if tt.args.ID != "" {
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Part.CreateRelationship() = %v, want %v", got, tt.want)
+					return
+				}
+			} else {
+				if got == nil {
+					t.Error("Part.CreateRelationship() got nit relationship")
+					return
+				}
+			}
+			if !reflect.DeepEqual(got, tt.p.Relationships[0]) {
+				t.Errorf("Part.CreateRelationship() = %v, want %v", got, tt.p.Relationships[0])
 			}
 		})
 	}
