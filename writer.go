@@ -9,8 +9,9 @@ import (
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	p *Package
-	w *zip.Writer
+	p    *Package
+	w    *zip.Writer
+	last *Part
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -56,6 +57,10 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 }
 
 func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {
+	if w.last != nil && len(w.last.Relationships) != 0 {
+
+	}
+
 	if err := w.p.add(part); err != nil {
 		return nil, err
 	}
@@ -70,6 +75,7 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 		w.p.deletePart(part.Name)
 		return nil, err
 	}
+	w.last = part
 	return pw, nil
 }
 
