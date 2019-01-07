@@ -4,7 +4,6 @@ import (
 	"errors"
 	"mime"
 	"net/url"
-	"path/filepath"
 	"strings"
 )
 
@@ -26,7 +25,8 @@ func NormalizePartName(name string) string {
 		return name
 	}
 
-	normalized := strings.Replace(filepath.ToSlash(name), "//", "/", -1)
+	normalized := strings.Replace(name, "\\", "/", -1)
+	normalized = strings.Replace(normalized, "//", "/", -1)
 	if strings.HasSuffix(normalized, "/") {
 		normalized = normalized[:len(normalized)-1]
 	}
