@@ -33,19 +33,24 @@ func (w *Writer) Close() error {
 }
 
 // Create adds a file to the OPC archive using the provided name and content type.
-// It returns a Writer to which the file contents should be written.
 // The file contents will be compressed using the Deflate default method.
-// The name shall be a valid part name, one can use NormalizePartName before calling Create to normalize it.
-// The part's contents must be written before the next call to Create, CreatePart or Close.
+// The name shall be a valid part name, one can use NormalizePartName before calling Create to normalize it
+//
+// This returns a Writer to which the file contents should be written.
+// The file's contents must be written to the io.Writer before the next call to Create, CreatePart, or Close.
 func (w *Writer) Create(name, contentType string) (io.Writer, error) {
 	part := &Part{Name: name, ContentType: contentType}
 	return w.add(part, CompressionNormal)
 }
 
 // CreatePart adds a file to the OPC archive using the provided part.
+// The name shall be a valid part name, one can use NormalizePartName before calling CreatePart to normalize it.
 // Writer takes ownership of part and may mutate all its fields except the Relationships,
 // which can be modified until the next call to Create, CreatePart or Close.
-// The caller must not modify part after calling CreatePart.
+// The caller must not modify part after calling CreatePart, except the Relationships.
+//
+// This returns a Writer to which the file contents should be written.
+// The file's contents must be written to the io.Writer before the next call to Create, CreatePart, or Close.
 func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Writer, error) {
 	return w.add(part, compression)
 }
