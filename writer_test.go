@@ -68,22 +68,21 @@ func TestWriter_setCompressor(t *testing.T) {
 		compression CompressionOption
 	}
 	tests := []struct {
-		name       string
-		w          *Writer
-		args       args
-		wantFlag   uint16
-		wantMethod uint16
+		name     string
+		w        *Writer
+		args     args
+		wantFlag uint16
 	}{
-		{"none", NewWriter(nil), args{&zip.FileHeader{}, CompressionNone}, 0x0, zip.Store},
-		{"normal", NewWriter(nil), args{&zip.FileHeader{}, CompressionNormal}, 0x0, zip.Deflate},
-		{"max", NewWriter(nil), args{&zip.FileHeader{}, CompressionMaximum}, 0x2, zip.Deflate},
-		{"fast", NewWriter(nil), args{&zip.FileHeader{}, CompressionFast}, 0x4, zip.Deflate},
-		{"sfast", NewWriter(nil), args{&zip.FileHeader{}, CompressionSuperFast}, 0x6, zip.Deflate},
+		{"none", NewWriter(nil), args{&zip.FileHeader{}, CompressionNone}, 0x0},
+		{"normal", NewWriter(nil), args{&zip.FileHeader{}, CompressionNormal}, 0x0},
+		{"max", NewWriter(nil), args{&zip.FileHeader{}, CompressionMaximum}, 0x2},
+		{"fast", NewWriter(nil), args{&zip.FileHeader{}, CompressionFast}, 0x4},
+		{"sfast", NewWriter(nil), args{&zip.FileHeader{}, CompressionSuperFast}, 0x6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.w.setCompressor(tt.args.fh, tt.args.compression)
-			if tt.args.fh.Method != tt.wantMethod {
+			if tt.args.fh.Method != zip.Deflate {
 				t.Error("Writer.setCompressor() should have set the method flag the deflate")
 			}
 		})

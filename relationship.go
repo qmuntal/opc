@@ -127,8 +127,10 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	if targetMode != ModeExternal && !uri.IsAbs() {
 		source, err := url.Parse(strings.TrimSpace(sourceURI))
 		if err != nil || source.String() == "" {
+			// ISO/IEC 29500-2 M1.28
 			result = errors.New("OPC: relationship source URI reference shall be a URI or a relative reference")
 		} else if isRelationshipURI(source.ResolveReference(uri).String()) {
+			// ISO/IEC 29500-2 M1.26
 			result = errors.New("OPC: The relationships part shall not have relationships to any other part")
 		}
 	}

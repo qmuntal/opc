@@ -18,8 +18,7 @@ import (
 // The package is also capable of storing relationships between parts.
 // Defined in ISO/IEC 29500-2 §9.
 type Package struct {
-	parts         map[string]*Part
-	Relationships []*Relationship
+	parts map[string]*Part
 }
 
 func newPackage() *Package {
@@ -33,11 +32,13 @@ func (p *Package) add(part *Part) error {
 		return err
 	}
 	upperURI := strings.ToUpper(part.Name)
+	// ISO/IEC 29500-2 M1.12
 	if _, ok := p.parts[upperURI]; ok {
-		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names [M1.12]")
+		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names")
 	}
+	// ISO/IEC 29500-2 M1.11
 	if p.checkPrefixCollision(upperURI) {
-		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it [M1.11]")
+		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it")
 	}
 	p.parts[upperURI] = part
 	return nil
