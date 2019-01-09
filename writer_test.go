@@ -166,15 +166,17 @@ func TestWriter_CreatePart(t *testing.T) {
 }
 
 func TestWriter_createRelationships(t *testing.T) {
+	rel := &Relationship{ID: "fakeId", RelType: "asd", sourceURI: "/", TargetURI: "/fakeTarget", TargetMode: ModeInternal}
 	w := NewWriter(&bytes.Buffer{})
 	w.testRelationshipFail = true
-	w.last = &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}
+	w.last = &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}
 	tests := []struct {
 		name    string
 		w       *Writer
 		wantErr bool
 	}{
-		{"base", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{ID: "fakeId", RelType: "asd", sourceURI: "/", TargetURI: "/fakeTarget", TargetMode: ModeInternal}}}}, false},
+		{"duplicated", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel, rel}}}, true},
+		{"base", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, false},
 		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}}, true},
 		{"empty", NewWriter(&bytes.Buffer{}), false},
 		{"hasSome", w, true},

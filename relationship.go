@@ -135,6 +135,7 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 }
 
 func validateRelationships(rs []*Relationship) error {
+	var s struct{}
 	ids := make(map[string]struct{}, 0)
 	for _, r := range rs {
 		if err := r.validate(); err != nil {
@@ -144,6 +145,7 @@ func validateRelationships(rs []*Relationship) error {
 		if _, ok := ids[r.ID]; ok {
 			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
 		}
+		ids[r.ID] = s
 	}
 	return nil
 }
