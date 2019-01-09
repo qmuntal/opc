@@ -8,6 +8,7 @@
 package gopc
 
 import (
+	"encoding/xml"
 	"errors"
 	"mime"
 	"path/filepath"
@@ -79,9 +80,42 @@ func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
+type contentTpesXML struct {
+	XMLName xml.Name `xml:"Types"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	Types   []interface{}
+}
+
+type defaultContentTypeXML struct {
+	XMLName     xml.Name `xml:"Default"`
+	Extension   string   `xml:"Extension,attr"`
+	ContentType string   `xml:"ContentType,attr"`
+}
+
+type overrideContentTypeXML struct {
+	XMLName     xml.Name `xml:"Override"`
+	PartName    string   `xml:"PartName,attr"`
+	ContentType string   `xml:"ContentType,attr"`
+}
+
 type contentTypes struct {
 	defaults  map[string]string // extenstion:contenttype
 	overrides map[string]string // partname:contenttype
+}
+
+func (c *contentTypes) toXML() *contentTpesXML {
+	cx := &contentTpesXML{Xmlns: "http://schemas.openxmlformats.org/package/2006/content-types"}
+	if c.defaults != nil {
+		for e, ct := range c.defaults {
+			cx.Types = append(cx.Types, &defaultContentTypeXML{Extension: e, ContentType: ct})
+		}
+	}
+	if c.overrides != nil {
+		for pn, ct := range c.overrides {
+			cx.Types = append(cx.Types, &overrideContentTypeXML{PartName: pn, ContentType: ct})
+		}
+	}
+	return cx
 }
 
 func (c *contentTypes) ensureDefaultsMap() {
