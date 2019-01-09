@@ -9,6 +9,8 @@ package gopc
 
 import (
 	"errors"
+	"mime"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -73,4 +75,34 @@ func (p *Package) checkPrefixCollision(uri string) bool {
 
 func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
+}
+
+type contentTypes map[string]string
+
+func (c contentTypes) add(partName, contentType string) error {
+	ext := strings.ToLower(filepath.Ext(partName))
+	t, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return err
+	}
+	ct := mime.FormatMediaType(t, params)
+	current, _ := c[ext]
+	exist := strings.EqualFold(ct, current)
+	if len(ext) == 0 || !exist {
+		c.addOverride(partName, contentType)
+	}
+
+	if !exist {
+		c.addDefault(partName, contentType)
+	}
+
+	return nil
+}
+
+func (c contentTypes) addOverride(partName, contentType string) {
+
+}
+
+func (c contentTypes) addDefault(partName, contentType string) {
+
 }
