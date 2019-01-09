@@ -96,20 +96,6 @@ func NormalizePartName(name string) string {
 	return p.EscapedPath()
 }
 
-func validateRelationships(rs []*Relationship) error {
-	ids := make(map[string]struct{}, 0)
-	for _, r := range rs {
-		if err := r.validate(); err != nil {
-			return err
-		}
-		// ISO/IEC 29500-2 M1.26
-		if _, ok := ids[r.ID]; ok {
-			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
-		}
-	}
-	return nil
-}
-
 func validateContentType(contentType string) error {
 	if len(contentType) == 0 {
 		return nil

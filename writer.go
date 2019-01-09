@@ -68,6 +68,9 @@ func (w *Writer) createRelationships() error {
 	if w.last == nil || len(w.last.Relationships) == 0 {
 		return nil
 	}
+	if err := validateRelationships(w.last.Relationships); err != nil {
+		return err
+	}
 	filepath.Dir(w.last.Name)
 	relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
 	if w.testRelationshipFail {

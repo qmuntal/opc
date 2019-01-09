@@ -134,6 +134,20 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	return result
 }
 
+func validateRelationships(rs []*Relationship) error {
+	ids := make(map[string]struct{}, 0)
+	for _, r := range rs {
+		if err := r.validate(); err != nil {
+			return err
+		}
+		// ISO/IEC 29500-2 M1.26
+		if _, ok := ids[r.ID]; ok {
+			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
+		}
+	}
+	return nil
+}
+
 func uniqueRelationshipID() string {
 	b := make([]byte, 8)
 	rand.Read(b)
@@ -147,16 +161,10 @@ type relationshipsXML struct {
 }
 
 func encodeRelationships(w io.Writer, rs []*Relationship) error {
-	if _, err := w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`)); err != nil {
-		return err
-	}
+	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
 	for _, r := range rs {
 		re.RelsXML = append(re.RelsXML, r.toXML())
 	}
-	e := xml.NewEncoder(w)
-	if err := e.Encode(re); err != nil {
-		return err
-	}
-	return nil
+	return xml.NewEncoder(w).Encode(re)
 }
