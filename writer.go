@@ -79,12 +79,14 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 		return nil, err
 	}
 
+	// Validate name and check for duplicated names ISO/IEC 29500-2 M3.3
 	if err := w.p.add(part); err != nil {
 		return nil, err
 	}
 
+	// ISO/IEC 29500-2 M1.4
 	fh := &zip.FileHeader{
-		Name:     part.Name[1:], // remove first "/"
+		Name:     zipName(part.Name),
 		Modified: time.Now(),
 	}
 	w.setCompressor(fh, compression)
@@ -112,8 +114,9 @@ func (w *Writer) setCompressor(fh *zip.FileHeader, compression CompressionOption
 		comp = flate.BestSpeed
 		fh.Flags |= 0x6
 	case CompressionNone:
-		fh.Method = zip.Store
-		return
+		comp = flate.NoCompression
+	default:
+		comp = -1000 // write will failt
 	}
 
 	fh.Method = zip.Deflate
@@ -124,4 +127,9 @@ func compressionFunc(comp int) func(out io.Writer) (io.WriteCloser, error) {
 	return func(out io.Writer) (io.WriteCloser, error) {
 		return flate.NewWriter(out, comp)
 	}
+}
+
+func zipName(partName string) string {
+	// ISO/IEC 29500-2 M3.4
+	return partName[1:] // remove first slash
 }

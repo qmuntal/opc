@@ -67,10 +67,7 @@ func (r *Relationship) validate() error {
 	if strings.TrimSpace(r.RelType) == "" {
 		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
 	}
-	if err := validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode); err != nil {
-		return err
-	}
-	return nil
+	return validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode)
 }
 
 func (r *Relationship) toXML() *relationshipXML {
@@ -126,8 +123,10 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	if targetMode != ModeExternal && !uri.IsAbs() {
 		source, err := url.Parse(strings.TrimSpace(sourceURI))
 		if err != nil || source.String() == "" {
+			// ISO/IEC 29500-2 M1.28
 			result = errors.New("OPC: relationship source URI reference shall be a URI or a relative reference")
 		} else if isRelationshipURI(source.ResolveReference(uri).String()) {
+			// ISO/IEC 29500-2 M1.26
 			result = errors.New("OPC: The relationships part shall not have relationships to any other part")
 		}
 	}
