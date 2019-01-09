@@ -91,6 +91,8 @@ func (w *Writer) setCompressor(fh *zip.FileHeader, compression CompressionOption
 		fh.Flags |= 0x6
 	case CompressionNone:
 		comp = flate.NoCompression
+	default:
+		comp = -1000 // write will failt
 	}
 
 	fh.Method = zip.Deflate

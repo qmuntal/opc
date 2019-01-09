@@ -107,11 +107,6 @@ func Test_compressionFunc(t *testing.T) {
 }
 
 func TestWriter_Create(t *testing.T) {
-	strName := "/a.doc"
-	for i := 0; i < 1<<16+1; i++ {
-		strName += "a"
-	}
-
 	type args struct {
 		uri         string
 		contentType string
@@ -122,7 +117,6 @@ func TestWriter_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b"}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b"}, true},
 		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b"}, false},
 	}
@@ -141,10 +135,6 @@ func TestWriter_Create(t *testing.T) {
 }
 
 func TestWriter_CreatePart(t *testing.T) {
-	strName := "/a.doc"
-	for i := 0; i < 1<<16+1; i++ {
-		strName += "a"
-	}
 	type args struct {
 		part        *Part
 		compression CompressionOption
@@ -155,7 +145,7 @@ func TestWriter_CreatePart(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{strName, "a/b", nil}, CompressionNone}, true},
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
 		{"base", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
 	}

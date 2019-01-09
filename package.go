@@ -20,7 +20,8 @@ import (
 // The package is also capable of storing relationships between parts.
 // Defined in ISO/IEC 29500-2 §9.
 type Package struct {
-	parts map[string]*Part
+	parts        map[string]*Part
+	contentTypes contentTypes
 }
 
 func newPackage() *Package {
@@ -42,6 +43,7 @@ func (p *Package) add(part *Part) error {
 	if p.checkPrefixCollision(upperURI) {
 		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it")
 	}
+	p.contentTypes.add(part.Name, part.ContentType)
 	p.parts[upperURI] = part
 	return nil
 }
@@ -77,32 +79,59 @@ func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
-type contentTypes map[string]string
+type contentTypes struct {
+	defaults  map[string]string // extenstion:contenttype
+	overrides map[string]string // partname:contenttype
+}
 
-func (c contentTypes) add(partName, contentType string) error {
+func (c *contentTypes) ensureDefaultsMap() {
+	if c.defaults == nil {
+		c.defaults = make(map[string]string, 0)
+	}
+}
+
+func (c *contentTypes) ensureOverridesMap() {
+	if c.overrides == nil {
+		c.overrides = make(map[string]string, 0)
+	}
+}
+
+// Add needs a valid content type, else the behaviour is undefined
+func (c *contentTypes) add(partName, contentType string) error {
+	// Process descrived in ISO/IEC 29500-2 §10.1.2.3
+	if len(contentType) == 0 {
+		return nil
+	}
+	t, params, _ := mime.ParseMediaType(contentType)
+	contentType = mime.FormatMediaType(t, params)
+
 	ext := strings.ToLower(filepath.Ext(partName))
-	t, params, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return err
-	}
-	ct := mime.FormatMediaType(t, params)
-	current, _ := c[ext]
-	exist := strings.EqualFold(ct, current)
-	if len(ext) == 0 || !exist {
+	if len(ext) == 0 {
 		c.addOverride(partName, contentType)
+		return nil
 	}
-
-	if !exist {
-		c.addDefault(partName, contentType)
+	ext = ext[1:] // remove dot
+	c.ensureDefaultsMap()
+	currentType, ok := c.defaults[ext]
+	if ok {
+		if currentType != contentType {
+			c.addOverride(partName, contentType)
+		}
+	} else {
+		c.addDefault(ext, contentType)
 	}
 
 	return nil
 }
 
-func (c contentTypes) addOverride(partName, contentType string) {
-
+func (c *contentTypes) addOverride(partName, contentType string) {
+	c.ensureOverridesMap()
+	// ISO/IEC 29500-2 M2.5
+	c.overrides[partName] = contentType
 }
 
-func (c contentTypes) addDefault(partName, contentType string) {
-
+func (c *contentTypes) addDefault(extension, contentType string) {
+	c.ensureDefaultsMap()
+	// ISO/IEC 29500-2 M2.5
+	c.defaults[extension] = contentType
 }
