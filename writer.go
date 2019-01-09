@@ -3,6 +3,7 @@ package gopc
 import (
 	"archive/zip"
 	"compress/flate"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -11,9 +12,10 @@ import (
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	p    *Package
-	w    *zip.Writer
-	last *Part
+	p                    *Package
+	w                    *zip.Writer
+	last                 *Part
+	testRelationshipFail bool // Only true for testing
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -68,6 +70,9 @@ func (w *Writer) createRelationships() error {
 	}
 	filepath.Dir(w.last.Name)
 	relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
+	if w.testRelationshipFail {
+		err = errors.New("")
+	}
 	if err != nil {
 		return err
 	}

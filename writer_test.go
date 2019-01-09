@@ -164,13 +164,16 @@ func TestWriter_CreatePart(t *testing.T) {
 }
 
 func TestWriter_createRelationships(t *testing.T) {
+	w := NewWriter(&bytes.Buffer{})
+	w.testRelationshipFail = true
+	w.last = &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}
 	tests := []struct {
 		name    string
 		w       *Writer
 		wantErr bool
 	}{
+		{"hasSome", w, true},
 		{"base", NewWriter(&bytes.Buffer{}), false},
-		{"nilWriter", NewWriter(&bytes.Buffer{}), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
