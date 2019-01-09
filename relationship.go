@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 )
@@ -86,11 +87,6 @@ func (r *Relationship) toXML() *relationshipXML {
 	return x
 }
 
-// writeToXML encodes the relationship to the target.
-func (r *Relationship) writeToXML(e *xml.Encoder) error {
-	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
-}
-
 // isRelationshipURI returns true if the uri points to a relationship part.
 func isRelationshipURI(uri string) bool {
 	up := strings.ToUpper(uri)
@@ -143,4 +139,25 @@ func uniqueRelationshipID() string {
 	b := make([]byte, 8)
 	rand.Read(b)
 	return fmt.Sprintf("%x", b)
+}
+
+type relationshipsXML struct {
+	XMLName xml.Name           `xml:"Relationships"`
+	XML     string             `xml:"xmlns,attr"`
+	RelsXML []*relationshipXML `xml:"Relationship"`
+}
+
+func encodeRelationships(w io.Writer, rs []*Relationship) error {
+	if _, err := w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`)); err != nil {
+		return err
+	}
+	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
+	for _, r := range rs {
+		re.RelsXML = append(re.RelsXML, r.toXML())
+	}
+	e := xml.NewEncoder(w)
+	if err := e.Encode(re); err != nil {
+		return err
+	}
+	return nil
 }

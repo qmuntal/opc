@@ -3,7 +3,6 @@ package gopc
 import (
 	"archive/zip"
 	"compress/flate"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -33,6 +32,10 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
+	if err := w.createRelationships(); err != nil {
+		w.w.Close()
+		return err
+	}
 	return w.w.Close()
 }
 
@@ -59,36 +62,21 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 	return w.add(part, compression)
 }
 
-type Relationships struct {
-	XMLName xml.Name       `xml:"Relationships"`
-	XML     string         `xml:"xml"`
-	Rels    []relationship `xml:"relations"`
-}
-
-type relationship struct {
-	XMLName xml.Name `xml:"Relationship"`
-	Target  string   `xml:"type,Id,Target"`
+func (w *Writer) createRelationships() error {
+	if w.last == nil || len(w.last.Relationships) == 0 {
+		return nil
+	}
+	filepath.Dir(w.last.Name)
+	relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
+	if err != nil {
+		return err
+	}
+	return encodeRelationships(relWriter, w.last.Relationships)
 }
 
 func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {
-	if w.last != nil && len(w.last.Relationships) != 0 {
-		filepath.Dir(w.last.Name)
-		relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
-		if err != nil {
-			return nil, err
-		}
-
-		v := &Relationships{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
-		v.Svs = append(v.Svs, server{"Shanghai_VPN", "127.0.0.1"})
-		/*e := xml.NewEncoder(relWriter)
-		e.EncodeElement(`xml version="1.0" encoding="UTF-8"`, xml.StartElement{})
-		e.EncodeElement(`ashd`, xml.StartElement{Name: xml.Name{Space: "", Local: "Relationships"}})
-
-		for _, r := range w.last.Relationships {
-			if err = r.writeToXML(e); err != nil {
-				return nil, err
-			}
-		}*/
+	if err := w.createRelationships(); err != nil {
+		return nil, err
 	}
 
 	if err := w.p.add(part); err != nil {
