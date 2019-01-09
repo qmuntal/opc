@@ -3,14 +3,19 @@ package gopc
 import (
 	"archive/zip"
 	"compress/flate"
+	"errors"
+	"fmt"
 	"io"
+	"path/filepath"
 	"time"
 )
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	p *Package
-	w *zip.Writer
+	p                    *Package
+	w                    *zip.Writer
+	last                 *Part
+	testRelationshipFail bool // Only true for testing
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -29,6 +34,10 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
+	if err := w.createRelationships(); err != nil {
+		w.w.Close()
+		return err
+	}
 	return w.w.Close()
 }
 
@@ -55,7 +64,29 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 	return w.add(part, compression)
 }
 
+func (w *Writer) createRelationships() error {
+	if w.last == nil || len(w.last.Relationships) == 0 {
+		return nil
+	}
+	if err := validateRelationships(w.last.Relationships); err != nil {
+		return err
+	}
+	filepath.Dir(w.last.Name)
+	relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
+	if w.testRelationshipFail {
+		err = errors.New("")
+	}
+	if err != nil {
+		return err
+	}
+	return encodeRelationships(relWriter, w.last.Relationships)
+}
+
 func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {
+	if err := w.createRelationships(); err != nil {
+		return nil, err
+	}
+
 	// Validate name and check for duplicated names ISO/IEC 29500-2 M3.3
 	if err := w.p.add(part); err != nil {
 		return nil, err
@@ -72,6 +103,7 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 		w.p.deletePart(part.Name)
 		return nil, err
 	}
+	w.last = part
 	return pw, nil
 }
 

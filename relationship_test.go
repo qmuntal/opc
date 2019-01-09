@@ -2,38 +2,8 @@ package gopc
 
 import (
 	"bytes"
-	"encoding/xml"
-	"reflect"
 	"testing"
 )
-
-func TestRelationship_writeToXML(t *testing.T) {
-	tests := []struct {
-		name    string
-		r       *Relationship
-		want    string
-		wantErr bool
-	}{
-		{"xmlWriter", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
-		{"emptyURI", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/"></Relationship>`, false},
-		{"externalMode", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeExternal}, `<Relationship Id="fakeId" Type="fakeType" Target="fakeTarget" TargetMode="External"></Relationship>`, false},
-		{"base", &Relationship{ID: "fakeId", RelType: "fakeType", sourceURI: "", TargetURI: "/fakeTarget", TargetMode: ModeInternal}, `<Relationship Id="fakeId" Type="fakeType" Target="/fakeTarget"></Relationship>`, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buff := bytes.NewBufferString("")
-			encoder := xml.NewEncoder(buff)
-			if err := tt.r.writeToXML(encoder); (err != nil) != tt.wantErr {
-				t.Errorf("Relationship.writeToXML() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			got := buff.String()
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Relationship.writeToXML() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func Test_isRelationshipURI(t *testing.T) {
 	type args struct {
@@ -87,4 +57,39 @@ func TestRelationship_validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_encodeRelationships(t *testing.T) {
+	type args struct {
+		rs []*Relationship
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantW   string
+		wantErr bool
+	}{
+		{"base", args{[]*Relationship{&Relationship{ID: "fakeId", RelType: "asd", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}}}, expectedsolution(), false},
+		{"base2", args{[]*Relationship{&Relationship{ID: "fakeId", RelType: "asd", sourceURI: "", TargetURI: "fakeTarget", TargetMode: ModeExternal}}}, expectedsolution2(), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			if err := encodeRelationships(w, tt.args.rs); (err != nil) != tt.wantErr {
+				t.Errorf("encodeRelationships() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("encodeRelationships() = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func expectedsolution() string {
+	return `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="fakeId" Type="asd" Target="/fakeTarget"></Relationship></Relationships>`
+}
+
+func expectedsolution2() string {
+	return `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="fakeId" Type="asd" Target="fakeTarget" TargetMode="External"></Relationship></Relationships>`
 }

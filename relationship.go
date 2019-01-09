@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 )
@@ -83,11 +84,6 @@ func (r *Relationship) toXML() *relationshipXML {
 	return x
 }
 
-// writeToXML encodes the relationship to the target.
-func (r *Relationship) writeToXML(e *xml.Encoder) error {
-	return e.EncodeElement(r.toXML(), xml.StartElement{Name: xml.Name{Space: "", Local: relationshipName}})
-}
-
 // isRelationshipURI returns true if the uri points to a relationship part.
 func isRelationshipURI(uri string) bool {
 	up := strings.ToUpper(uri)
@@ -138,8 +134,37 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	return result
 }
 
+func validateRelationships(rs []*Relationship) error {
+	ids := make(map[string]struct{}, 0)
+	for _, r := range rs {
+		if err := r.validate(); err != nil {
+			return err
+		}
+		// ISO/IEC 29500-2 M1.26
+		if _, ok := ids[r.ID]; ok {
+			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
+		}
+	}
+	return nil
+}
+
 func uniqueRelationshipID() string {
 	b := make([]byte, 8)
 	rand.Read(b)
 	return fmt.Sprintf("%x", b)
+}
+
+type relationshipsXML struct {
+	XMLName xml.Name           `xml:"Relationships"`
+	XML     string             `xml:"xmlns,attr"`
+	RelsXML []*relationshipXML `xml:"Relationship"`
+}
+
+func encodeRelationships(w io.Writer, rs []*Relationship) error {
+	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
+	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
+	for _, r := range rs {
+		re.RelsXML = append(re.RelsXML, r.toXML())
+	}
+	return xml.NewEncoder(w).Encode(re)
 }

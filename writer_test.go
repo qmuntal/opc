@@ -52,6 +52,7 @@ func TestWriter_Close(t *testing.T) {
 		wantErr bool
 	}{
 		{"base", NewWriter(&bytes.Buffer{}), false},
+		{"fail", &Writer{w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -148,6 +149,7 @@ func TestWriter_CreatePart(t *testing.T) {
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
 		{"base", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
+		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -158,6 +160,29 @@ func TestWriter_CreatePart(t *testing.T) {
 			}
 			if !tt.wantErr && got == nil {
 				t.Error("Writer.CreatePart want a valid writer")
+			}
+		})
+	}
+}
+
+func TestWriter_createRelationships(t *testing.T) {
+	w := NewWriter(&bytes.Buffer{})
+	w.testRelationshipFail = true
+	w.last = &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}
+	tests := []struct {
+		name    string
+		w       *Writer
+		wantErr bool
+	}{
+		{"base", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{ID: "fakeId", RelType: "asd", sourceURI: "/", TargetURI: "/fakeTarget", TargetMode: ModeInternal}}}}, false},
+		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}}, true},
+		{"empty", NewWriter(&bytes.Buffer{}), false},
+		{"hasSome", w, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.w.createRelationships(); (err != nil) != tt.wantErr {
+				t.Errorf("Writer.createRelationships() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
