@@ -68,22 +68,21 @@ func TestWriter_setCompressor(t *testing.T) {
 		compression CompressionOption
 	}
 	tests := []struct {
-		name       string
-		w          *Writer
-		args       args
-		wantFlag   uint16
-		wantMethod uint16
+		name     string
+		w        *Writer
+		args     args
+		wantFlag uint16
 	}{
-		{"none", NewWriter(nil), args{&zip.FileHeader{}, CompressionNone}, 0x0, zip.Store},
-		{"normal", NewWriter(nil), args{&zip.FileHeader{}, CompressionNormal}, 0x0, zip.Deflate},
-		{"max", NewWriter(nil), args{&zip.FileHeader{}, CompressionMaximum}, 0x2, zip.Deflate},
-		{"fast", NewWriter(nil), args{&zip.FileHeader{}, CompressionFast}, 0x4, zip.Deflate},
-		{"sfast", NewWriter(nil), args{&zip.FileHeader{}, CompressionSuperFast}, 0x6, zip.Deflate},
+		{"none", NewWriter(nil), args{&zip.FileHeader{}, CompressionNone}, 0x0},
+		{"normal", NewWriter(nil), args{&zip.FileHeader{}, CompressionNormal}, 0x0},
+		{"max", NewWriter(nil), args{&zip.FileHeader{}, CompressionMaximum}, 0x2},
+		{"fast", NewWriter(nil), args{&zip.FileHeader{}, CompressionFast}, 0x4},
+		{"sfast", NewWriter(nil), args{&zip.FileHeader{}, CompressionSuperFast}, 0x6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.w.setCompressor(tt.args.fh, tt.args.compression)
-			if tt.args.fh.Method != tt.wantMethod {
+			if tt.args.fh.Method != zip.Deflate {
 				t.Error("Writer.setCompressor() should have set the method flag the deflate")
 			}
 		})
@@ -108,11 +107,6 @@ func Test_compressionFunc(t *testing.T) {
 }
 
 func TestWriter_Create(t *testing.T) {
-	strName := "/a.doc"
-	for i := 0; i < 1<<16+1; i++ {
-		strName += "a"
-	}
-
 	type args struct {
 		uri         string
 		contentType string
@@ -123,7 +117,6 @@ func TestWriter_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{strName, "a/b"}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b"}, true},
 		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b"}, false},
 	}
@@ -142,10 +135,6 @@ func TestWriter_Create(t *testing.T) {
 }
 
 func TestWriter_CreatePart(t *testing.T) {
-	strName := "/a.doc"
-	for i := 0; i < 1<<16+1; i++ {
-		strName += "a"
-	}
 	type args struct {
 		part        *Part
 		compression CompressionOption
@@ -156,7 +145,7 @@ func TestWriter_CreatePart(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{strName, "a/b", nil}, CompressionNone}, true},
+		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
 		{"base", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
 	}
