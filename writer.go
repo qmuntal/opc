@@ -69,6 +69,7 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 }
 
 func (w *Writer) createContentTypes() error {
+	// ISO/IEC 29500-2 M3.10
 	cw, err := w.addToPackage(&Part{Name: "/[Content_Types].xml"}, CompressionNormal)
 	if err != nil {
 		return err

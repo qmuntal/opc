@@ -78,21 +78,21 @@ func NormalizePartName(name string) string {
 
 	normalized := strings.Replace(name, "\\", "/", -1)
 	normalized = strings.Replace(normalized, "//", "/", -1)
+	normalized = strings.Replace(normalized, "%2e", ".", -1)
 	if strings.HasSuffix(normalized, "/") {
 		normalized = normalized[:len(normalized)-1]
 	}
 
 	encodedURL, err := url.Parse(normalized)
-	if err != nil {
-		return name
-	}
-
-	if encodedURL.IsAbs() {
+	if err != nil || encodedURL.IsAbs() {
 		return name
 	}
 
 	// Normalize url, decode unnecessary escapes and encode necessary
-	p, _ := url.Parse(defaultRef.ResolveReference(encodedURL).Path)
+	p, err := url.Parse(defaultRef.ResolveReference(encodedURL).Path)
+	if err != nil {
+		return name
+	}
 	return p.EscapedPath()
 }
 
