@@ -190,6 +190,7 @@ func TestWriter_createRelationships(t *testing.T) {
 		wantErr bool
 	}{
 		{"base", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, false},
+		{"base2", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/b/a.xml", Relationships: []*Relationship{rel}}}, false},
 		{"hasSome", w, false},
 		{"duplicated", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel, rel}}}, true},
 		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}}, true},
