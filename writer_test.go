@@ -46,13 +46,18 @@ func TestWriter_Flush(t *testing.T) {
 }
 
 func TestWriter_Close(t *testing.T) {
+	p := newPackage()
+	p.contentTypes.add("/a.xml", "a/b")
+	p.contentTypes.add("/b.xml", "c/d")
 	tests := []struct {
 		name    string
 		w       *Writer
 		wantErr bool
 	}{
 		{"base", NewWriter(&bytes.Buffer{}), false},
-		{"fail", &Writer{w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, true},
+		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{})}, false},
+		{"failCt", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), testContentTypesFail: true}, true},
+		{"failRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

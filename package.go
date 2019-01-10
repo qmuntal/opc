@@ -10,6 +10,7 @@ package gopc
 import (
 	"encoding/xml"
 	"errors"
+	"io"
 	"mime"
 	"path/filepath"
 	"sort"
@@ -76,13 +77,19 @@ func (p *Package) checkPrefixCollision(uri string) bool {
 	return false
 }
 
+func (p *Package) encodeContentTypes(w io.Writer) error {
+	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
+	e := xml.NewEncoder(w)
+	return e.Encode(p.contentTypes.toXML())
+}
+
 func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
 type contentTpesXML struct {
 	XMLName xml.Name `xml:"Types"`
-	Xmlns   string   `xml:"xmlns,attr"`
+	XML     string   `xml:"xmlns,attr"`
 	Types   []interface{}
 }
 
@@ -104,7 +111,7 @@ type contentTypes struct {
 }
 
 func (c *contentTypes) toXML() *contentTpesXML {
-	cx := &contentTpesXML{Xmlns: "http://schemas.openxmlformats.org/package/2006/content-types"}
+	cx := &contentTpesXML{XML: "http://schemas.openxmlformats.org/package/2006/content-types"}
 	if c.defaults != nil {
 		for e, ct := range c.defaults {
 			cx.Types = append(cx.Types, &defaultContentTypeXML{Extension: e, ContentType: ct})

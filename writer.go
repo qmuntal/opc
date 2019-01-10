@@ -10,12 +10,15 @@ import (
 	"time"
 )
 
+const opcCtx = "opc"
+
 // Writer implements a OPC file writer.
 type Writer struct {
 	p                    *Package
 	w                    *zip.Writer
 	last                 *Part
 	testRelationshipFail bool // Only true for testing
+	testContentTypesFail bool // Only true for testing
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -34,6 +37,10 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
+	if err := w.createContentTypes(); err != nil {
+		w.w.Close()
+		return err
+	}
 	if err := w.createRelationships(); err != nil {
 		w.w.Close()
 		return err
@@ -64,6 +71,17 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 	return w.add(part, compression)
 }
 
+func (w *Writer) createContentTypes() error {
+	cw, err := w.w.Create("[Content_Types].xml")
+	if w.testContentTypesFail {
+		err = errors.New("")
+	}
+	if err != nil {
+		return err
+	}
+	return w.p.encodeContentTypes(cw)
+}
+
 func (w *Writer) createRelationships() error {
 	if w.last == nil || len(w.last.Relationships) == 0 {
 		return nil
@@ -72,14 +90,14 @@ func (w *Writer) createRelationships() error {
 		return err
 	}
 	filepath.Dir(w.last.Name)
-	relWriter, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
+	rw, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
 	if w.testRelationshipFail {
 		err = errors.New("")
 	}
 	if err != nil {
 		return err
 	}
-	return encodeRelationships(relWriter, w.last.Relationships)
+	return encodeRelationships(rw, w.last.Relationships)
 }
 
 func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {

@@ -22,7 +22,6 @@ const (
 	ModeExternal
 )
 
-const relationshipName = "Relationship"
 const externalMode = "External"
 
 const (
