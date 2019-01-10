@@ -3,7 +3,6 @@ package gopc
 import (
 	"archive/zip"
 	"compress/flate"
-	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -14,11 +13,9 @@ const opcCtx = "opc"
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	p                    *Package
-	w                    *zip.Writer
-	last                 *Part
-	testRelationshipFail bool // Only true for testing
-	testContentTypesFail bool // Only true for testing
+	p    *Package
+	w    *zip.Writer
+	last *Part
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -72,10 +69,7 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 }
 
 func (w *Writer) createContentTypes() error {
-	cw, err := w.w.Create("[Content_Types].xml")
-	if w.testContentTypesFail {
-		err = errors.New("")
-	}
+	cw, err := w.addToPackage(&Part{Name: "/[Content_Types].xml"}, CompressionNormal)
 	if err != nil {
 		return err
 	}
@@ -89,11 +83,8 @@ func (w *Writer) createRelationships() error {
 	if err := validateRelationships(w.last.Relationships); err != nil {
 		return err
 	}
-	filepath.Dir(w.last.Name)
-	rw, err := w.w.Create(fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name)))
-	if w.testRelationshipFail {
-		err = errors.New("")
-	}
+	relName := fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name))
+	rw, err := w.addToPackage(&Part{Name: relName, ContentType: "application/vnd.openxmlformats-package.relationships+xml"}, CompressionNormal)
 	if err != nil {
 		return err
 	}
@@ -104,13 +95,18 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 	if err := w.createRelationships(); err != nil {
 		return nil, err
 	}
+	pw, err := w.addToPackage(part, compression)
+	if err != nil {
+		w.last = part
+	}
+	return pw, err
+}
 
+func (w *Writer) addToPackage(part *Part, compression CompressionOption) (io.Writer, error) {
 	// Validate name and check for duplicated names ISO/IEC 29500-2 M3.3
 	if err := w.p.add(part); err != nil {
 		return nil, err
 	}
-
-	// ISO/IEC 29500-2 M1.4
 	fh := &zip.FileHeader{
 		Name:     zipName(part.Name),
 		Modified: time.Now(),
@@ -121,7 +117,6 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 		w.p.deletePart(part.Name)
 		return nil, err
 	}
-	w.last = part
 	return pw, nil
 }
 

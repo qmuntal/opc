@@ -33,7 +33,7 @@ const (
 	RelTypeDigitalSignatureOrigin = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin"
 	// RelTypeDigitalSignatureCert defines a digital signature certificate relationship.
 	RelTypeDigitalSignatureCert = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/certificate"
-	// RelTypeThumbnail defines a thmbnail relationship.
+	// RelTypeThumbnail defines a thumbnail relationship.
 	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
 )
 

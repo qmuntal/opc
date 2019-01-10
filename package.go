@@ -79,8 +79,7 @@ func (p *Package) checkPrefixCollision(uri string) bool {
 
 func (p *Package) encodeContentTypes(w io.Writer) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
-	e := xml.NewEncoder(w)
-	return e.Encode(p.contentTypes.toXML())
+	return xml.NewEncoder(w).Encode(p.contentTypes.toXML())
 }
 
 func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {

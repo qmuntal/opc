@@ -49,15 +49,17 @@ func TestWriter_Close(t *testing.T) {
 	p := newPackage()
 	p.contentTypes.add("/a.xml", "a/b")
 	p.contentTypes.add("/b.xml", "c/d")
+	pC := newPackage()
+	pC.parts["/[CONTENT_TYPES].XML"] = new(Part)
 	tests := []struct {
 		name    string
 		w       *Writer
 		wantErr bool
 	}{
+		{"failCt", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{})}, true},
 		{"base", NewWriter(&bytes.Buffer{}), false},
 		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{})}, false},
-		{"failCt", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), testContentTypesFail: true}, true},
-		{"failRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, true},
+		{"failRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -141,7 +143,10 @@ func TestWriter_Create(t *testing.T) {
 }
 
 func TestWriter_CreatePart(t *testing.T) {
+	rel := &Relationship{ID: "fakeId", RelType: "asd", sourceURI: "/", TargetURI: "/fakeTarget", TargetMode: ModeInternal}
 	w := NewWriter(&bytes.Buffer{})
+	pRel := newPackage()
+	pRel.parts["/_RELS/A.XML.RELS"] = new(Part)
 	type args struct {
 		part        *Part
 		compression CompressionOption
@@ -154,7 +159,8 @@ func TestWriter_CreatePart(t *testing.T) {
 	}{
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
-		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
+		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
+		{"failRel2", &Writer{p: pRel, w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, true},
 		{"base", w, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
 		{"multipleDiffName", w, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, false},
 		{"multipleDiffContentType", w, args{&Part{"/c.xml", "c/d", nil}, CompressionNone}, false},
@@ -177,18 +183,17 @@ func TestWriter_CreatePart(t *testing.T) {
 func TestWriter_createRelationships(t *testing.T) {
 	rel := &Relationship{ID: "fakeId", RelType: "asd", sourceURI: "/", TargetURI: "/fakeTarget", TargetMode: ModeInternal}
 	w := NewWriter(&bytes.Buffer{})
-	w.testRelationshipFail = true
 	w.last = &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}
 	tests := []struct {
 		name    string
 		w       *Writer
 		wantErr bool
 	}{
+		{"base", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, false},
+		{"hasSome", w, false},
 		{"duplicated", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel, rel}}}, true},
-		{"base", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, false},
 		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{&Relationship{}}}}, true},
 		{"empty", NewWriter(&bytes.Buffer{}), false},
-		{"hasSome", w, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
