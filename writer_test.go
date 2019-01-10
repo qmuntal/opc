@@ -136,6 +136,7 @@ func TestWriter_Create(t *testing.T) {
 }
 
 func TestWriter_CreatePart(t *testing.T) {
+	w := NewWriter(&bytes.Buffer{})
 	type args struct {
 		part        *Part
 		compression CompressionOption
@@ -148,8 +149,11 @@ func TestWriter_CreatePart(t *testing.T) {
 	}{
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
-		{"base", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
 		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{&Relationship{}}}, testRelationshipFail: true}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
+		{"base", w, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
+		{"multipleDiffName", w, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, false},
+		{"multipleDiffContentType", w, args{&Part{"/c.xml", "c/d", nil}, CompressionNone}, false},
+		{"duplicated", w, args{&Part{"/c.xml", "c/d", nil}, CompressionNone}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -38,11 +38,11 @@ func (p *Package) add(part *Part) error {
 	upperURI := strings.ToUpper(part.Name)
 	// ISO/IEC 29500-2 M1.12
 	if _, ok := p.parts[upperURI]; ok {
-		return errors.New("OPC: packages shall not contain equivalent part names, and package implementers shall neither create nor recognize packages with equivalent part names")
+		return errors.New("OPC: packages shall not contain equivalent part names")
 	}
 	// ISO/IEC 29500-2 M1.11
 	if p.checkPrefixCollision(upperURI) {
-		return errors.New("OPC: a package implementer shall neither create nor recognize a part with a part name derived from another part name by appending segments to it")
+		return errors.New("OPC: a package shall not contain a part with a part name derived from another part name by appending segments to it")
 	}
 	p.contentTypes.add(part.Name, part.ContentType)
 	p.parts[upperURI] = part
