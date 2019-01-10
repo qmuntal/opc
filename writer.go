@@ -83,7 +83,11 @@ func (w *Writer) createRelationships() error {
 	if err := validateRelationships(w.last.Relationships); err != nil {
 		return err
 	}
-	relName := fmt.Sprintf("%s/_rels/%s.rels", filepath.Dir(w.last.Name)[1:], filepath.Base(w.last.Name))
+	dirName := filepath.Dir(w.last.Name)[1:]
+	if dirName != "" {
+		dirName = "/" + dirName
+	}
+	relName := fmt.Sprintf("%s/_rels/%s.rels", dirName, filepath.Base(w.last.Name))
 	rw, err := w.addToPackage(&Part{Name: relName, ContentType: "application/vnd.openxmlformats-package.relationships+xml"}, CompressionNormal)
 	if err != nil {
 		return err
@@ -96,7 +100,7 @@ func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, erro
 		return nil, err
 	}
 	pw, err := w.addToPackage(part, compression)
-	if err != nil {
+	if err == nil {
 		w.last = part
 	}
 	return pw, err
