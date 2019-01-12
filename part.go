@@ -7,22 +7,6 @@ import (
 	"strings"
 )
 
-// CompressionOption is an enumerable for the different compression options.
-type CompressionOption int
-
-const (
-	// CompressionNone disables the compression.
-	CompressionNone CompressionOption = iota - 1
-	// CompressionNormal is optimized for a reasonable compromise between size and performance.
-	CompressionNormal
-	// CompressionMaximum is optimized for size.
-	CompressionMaximum
-	// CompressionFast is optimized for performance.
-	CompressionFast
-	// CompressionSuperFast is optimized for super performance.
-	CompressionSuperFast
-)
-
 // A Part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
 // The part properties will be validated before writing or reading from disk.

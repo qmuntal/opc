@@ -11,6 +11,22 @@ import (
 
 const opcCtx = "opc"
 
+// CompressionOption is an enumerable for the different compression options.
+type CompressionOption int
+
+const (
+	// CompressionNone disables the compression.
+	CompressionNone CompressionOption = iota - 1
+	// CompressionNormal is optimized for a reasonable compromise between size and performance.
+	CompressionNormal
+	// CompressionMaximum is optimized for size.
+	CompressionMaximum
+	// CompressionFast is optimized for performance.
+	CompressionFast
+	// CompressionSuperFast is optimized for super performance.
+	CompressionSuperFast
+)
+
 // Writer implements a OPC file writer.
 type Writer struct {
 	p    *Package
@@ -26,7 +42,7 @@ func NewWriter(w io.Writer) *Writer {
 // Flush flushes any buffered data to the underlying writer.
 // Part metadata, relationships, content types and other OPC related files won't be flushed.
 // Calling Flush is not normally necessary; calling Close is sufficient.
-// Useful to do simultaneos writing and reading.
+// Useful to do simultaneous writing and reading.
 func (w *Writer) Flush() error {
 	return w.w.Flush()
 }

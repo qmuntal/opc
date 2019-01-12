@@ -24,19 +24,6 @@ const (
 
 const externalMode = "External"
 
-const (
-	// RelTypeMetaDataCoreProps defines a core properties relationship.
-	RelTypeMetaDataCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
-	// RelTypeDigitalSignature defines a digital signature relationship.
-	RelTypeDigitalSignature = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/signature"
-	// RelTypeDigitalSignatureOrigin defines a digital signature origin relationship.
-	RelTypeDigitalSignatureOrigin = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin"
-	// RelTypeDigitalSignatureCert defines a digital signature certificate relationship.
-	RelTypeDigitalSignatureCert = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/certificate"
-	// RelTypeThumbnail defines a thumbnail relationship.
-	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
-)
-
 // Relationship is used to express a relationship between a source and a target part.
 // The only way to create a Relationship, is to call the Part.CreateRelationship()
 // or Package.CreateRelationship(). A relationship is owned by a part or by the package itself.
