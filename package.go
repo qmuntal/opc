@@ -86,7 +86,7 @@ func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
-type contentTpesXML struct {
+type contentTypesXML struct {
 	XMLName xml.Name `xml:"Types"`
 	XML     string   `xml:"xmlns,attr"`
 	Types   []interface{}
@@ -109,8 +109,8 @@ type contentTypes struct {
 	overrides map[string]string // partname:contenttype
 }
 
-func (c *contentTypes) toXML() *contentTpesXML {
-	cx := &contentTpesXML{XML: "http://schemas.openxmlformats.org/package/2006/content-types"}
+func (c *contentTypes) toXML() *contentTypesXML {
+	cx := &contentTypesXML{XML: "http://schemas.openxmlformats.org/package/2006/content-types"}
 	if c.defaults != nil {
 		for e, ct := range c.defaults {
 			cx.Types = append(cx.Types, &defaultContentTypeXML{Extension: e, ContentType: ct})
@@ -174,4 +174,10 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 	c.ensureDefaultsMap()
 	// ISO/IEC 29500-2 M2.5
 	c.defaults[extension] = contentType
+}
+
+func decodeContentTypes(r io.Reader) (*contentTypesXML, error) {
+	ct := new(contentTypesXML)
+	err := xml.NewDecoder(r).Decode(ct)
+	return ct, err
 }
