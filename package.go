@@ -87,9 +87,9 @@ func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
 }
 
 type contentTypesXML struct {
-	XMLName xml.Name `xml:"Types"`
-	XML     string   `xml:"xmlns,attr"`
-	Types   []interface{}
+	XMLName xml.Name      `xml:"Types"`
+	XML     string        `xml:"xmlns,attr"`
+	Types   []interface{} `xml:",any"`
 }
 
 type defaultContentTypeXML struct {
@@ -176,8 +176,38 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 	c.defaults[extension] = contentType
 }
 
-func decodeContentTypes(r io.Reader) (*contentTypesXML, error) {
-	ct := new(contentTypesXML)
+type contentTypesXMLReader struct {
+	XMLName xml.Name `xml:"Types"`
+	XML     string   `xml:"xmlns,attr"`
+	Types   []mixed  `xml:",any"`
+}
+
+type mixed struct {
+	Value interface{}
+}
+
+func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	switch start.Name.Local {
+	case "Override":
+		var e overrideContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	case "Default":
+		var e defaultContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	default:
+		return errors.New("OPC: content type has a element with an unexpected type")
+	}
+	return nil
+}
+
+func decodeContentTypes(r io.Reader) (*contentTypesXMLReader, error) {
+	ct := new(contentTypesXMLReader)
 	err := xml.NewDecoder(r).Decode(ct)
 	return ct, err
 }
