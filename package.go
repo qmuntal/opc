@@ -175,3 +175,59 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 	// ISO/IEC 29500-2 M2.5
 	c.defaults[extension] = contentType
 }
+
+type corePropertiesXML struct {
+	XMLName        xml.Name `xml:"coreProperties"`
+	XML            string   `xml:"xmlns,attr"`
+	XMLDCTERMS     string   `xml:"xmlns:dcterms,attr"`
+	XMLDC          string   `xml:"xmlns:dc,attr"`
+	Category       string   `xml:"category,omitempty"`
+	ContentStatus  string   `xml:"contentStatus,omitempty"`
+	Created        string   `xml:"dcterms:created,omitempty"`
+	Creator        string   `xml:"dc:creator,omitempty"`
+	Description    string   `xml:"dc:description,omitempty"`
+	Identifier     string   `xml:"dc:identifier,omitempty"`
+	Keywords       string   `xml:"keywords,omitempty"`
+	Language       string   `xml:"dc:language,omitempty"`
+	LastModifiedBy string   `xml:"lastModifiedBy,omitempty"`
+	LastPrinted    string   `xml:"lastPrinted,omitempty"`
+	Modified       string   `xml:"dcterms:modified,omitempty"`
+	Revision       string   `xml:"revision,omitempty"`
+	Subject        string   `xml:"dc:subject,omitempty"`
+	Title          string   `xml:"dc:title,omitempty"`
+	Version        string   `xml:"version,omitempty"`
+}
+
+// CoreProperties enable users to get and set well-known and common sets of property metadata within packages.
+type CoreProperties struct {
+	Category       string // A categorization of the content of this package.
+	ContentStatus  string // The status of the content.
+	Created        string // Date of creation of the resource.
+	Creator        string // An entity primarily responsible for making the content of the resource.
+	Description    string // An explanation of the content of the resource.
+	Identifier     string // An unambiguous reference to the resource within a given context.
+	Keywords       string // A delimited set of keywords to support searching and indexing.
+	Language       string // The language of the intellectual content of the resource.
+	LastModifiedBy string // The user who performed the last modification.
+	LastPrinted    string // The date and time of the last printing.
+	Modified       string // Date on which the resource was changed.
+	Revision       string // The revision number.
+	Subject        string // The topic of the content of the resource.
+	Title          string // The name given to the resource.
+	Version        string // The version number.
+}
+
+func (c *CoreProperties) encode(w io.Writer) error {
+	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
+	return xml.NewEncoder(w).Encode(&corePropertiesXML{
+		xml.Name{Local: "coreProperties"},
+		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+		"http://purl.org/dc/terms/",
+		"http://purl.org/dc/elements/1.1/",
+		c.Category, c.ContentStatus, c.Created,
+		c.Creator, c.Description, c.Identifier,
+		c.Keywords, c.Language, c.LastModifiedBy,
+		c.LastPrinted, c.Modified, c.Revision,
+		c.Subject, c.Title, c.Version,
+	})
+}

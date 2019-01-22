@@ -1,6 +1,7 @@
 package gopc
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -83,6 +84,40 @@ func TestPackage_add(t *testing.T) {
 			}
 			if !tt.wantErr && !reflect.DeepEqual(tt.p.contentTypes, tt.wantContentTypes) {
 				t.Errorf("Package.add() = %v, want %v", tt.p.contentTypes, tt.wantContentTypes)
+			}
+		})
+	}
+}
+
+func buildCoreString(content string) string {
+	s := `<?xml version="1.0" encoding="UTF-8"?>`
+	s += `<coreProperties xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"`
+	s += ` xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">`
+	return s + content + "</coreProperties>"
+}
+
+func TestCoreProperties_encode(t *testing.T) {
+	tests := []struct {
+		name    string
+		c       *CoreProperties
+		wantW   string
+		wantErr bool
+	}{
+		{"empty", &CoreProperties{}, buildCoreString(""), false},
+		{"some", &CoreProperties{Category: "A", LastPrinted: "b"}, buildCoreString("<category>A</category><lastPrinted>b</lastPrinted>"), false},
+		{"all", &CoreProperties{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
+			buildCoreString("<category>a</category><contentStatus>b</contentStatus><dcterms:created>c</dcterms:created><dc:creator>d</dc:creator><dc:description>e</dc:description><dc:identifier>f</dc:identifier><keywords>g</keywords><dc:language>h</dc:language><lastModifiedBy>i</lastModifiedBy><lastPrinted>j</lastPrinted><dcterms:modified>k</dcterms:modified><revision>l</revision><dc:subject>m</dc:subject><dc:title>n</dc:title><version>o</version>"),
+			false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			if err := tt.c.encode(w); (err != nil) != tt.wantErr {
+				t.Errorf("CoreProperties.encode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("CoreProperties.encode() = %v, want %v", gotW, tt.wantW)
 			}
 		})
 	}

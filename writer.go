@@ -29,9 +29,10 @@ const (
 
 // Writer implements a OPC file writer.
 type Writer struct {
-	p    *Package
-	w    *zip.Writer
-	last *Part
+	Properties CoreProperties // Package metadata. can be modified until the Writer is closed.
+	p          *Package
+	w          *zip.Writer
+	last       *Part
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -50,11 +51,14 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
-	if err := w.createContentTypes(); err != nil {
-		w.w.Close()
+	if err := w.createCoreProperties(); err != nil {
 		return err
 	}
 	if err := w.createRelationships(); err != nil {
+		w.w.Close()
+		return err
+	}
+	if err := w.createContentTypes(); err != nil {
 		w.w.Close()
 		return err
 	}
@@ -82,6 +86,17 @@ func (w *Writer) Create(name, contentType string) (io.Writer, error) {
 // The file's contents must be written to the io.Writer before the next call to Create, CreatePart, or Close.
 func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Writer, error) {
 	return w.add(part, compression)
+}
+
+func (w *Writer) createCoreProperties() error {
+	if w.Properties == (CoreProperties{}) {
+		return nil
+	}
+	cw, err := w.addToPackage(&Part{Name: "/props/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"}, CompressionNormal)
+	if err != nil {
+		return err
+	}
+	return w.Properties.encode(cw)
 }
 
 func (w *Writer) createContentTypes() error {
