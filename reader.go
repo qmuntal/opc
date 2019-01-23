@@ -3,7 +3,6 @@ package gopc
 import (
 	"errors"
 	"io"
-	"path/filepath"
 )
 
 type archiveFile interface {
@@ -28,76 +27,54 @@ func NewReader(r io.ReaderAt, size int64) (*Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newReader(zr), nil
+	return newReader(zr)
 }
 
 // newReader returns a new Reader reading an OPC file to r.
-func newReader(a archive) *Reader {
-	return &Reader{p: newPackage(), r: a}
-}
-
-// LoadPackage has the responsability of set the phisical file readed into a logical package
-// so in the future it can be parsed or readed.
-func (r *Reader) LoadPackage() {
-	r.loadParts()
-	r.getContentType()
-
-	for i := 0; i < len(r.Parts); i++ {
-		r.p.add(r.Parts[i])
+func newReader(a archive) (*Reader, error) {
+	r := &Reader{p: newPackage(), r: a}
+	if err := r.loadPackage(); err != nil {
+		return nil, err
 	}
+	return r, nil
 }
 
-func (r *Reader) loadParts() {
+func (r *Reader) loadPackage() error {
 	files := r.r.Files()
-	r.Parts = make([]*Part, len(files))
-	for i := 0; i < len(files); i++ {
-		r.Parts[i] = &Part{Name: files[i].Name()}
+	r.Parts = make([]*Part, len(files)-1) // -1 is for [Content_Types].xml
+	ct, err := r.loadContentType()
+	if err != nil {
+		return err
 	}
-}
-
-func (r *Reader) getContentType() error {
-	r.loadParts()
-	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
-	files := r.r.Files()
-	var found bool
-	for i := 0; i < len(files); i++ {
-		if files[i].Name() != "[Content_Types].xml" {
+	for _, file := range files {
+		if file.Name() == "[Content_Types].xml" {
 			continue
 		}
-
-		found = true
-		reader, err := files[i].Open()
+		n := "/" + file.Name()
+		cType, err := ct.findType(n)
 		if err != nil {
 			return err
 		}
-		ct, err := decodeContentTypes(reader)
-		if err != nil {
-			return err
-		}
+		part := &Part{Name: n, ContentType: cType}
 
-		for _, c := range ct.Types {
-			if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
-				ext := cDefault.Extension
-				for j := 0; j < len(files); j++ {
-					if filepath.Ext(r.Parts[j].Name)[1:] == ext {
-						if r.Parts[j].ContentType == "" {
-							r.Parts[j].ContentType = cDefault.ContentType
-						} else {
-							return errors.New("OPC: there must be only one Default content type for each extension")
-						}
-					}
-				}
-			} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
-				for j := 0; j < len(files); j++ {
-					if r.Parts[j].Name == cOverride.PartName[1:] {
-						r.Parts[j].ContentType = cOverride.ContentType
-					}
-				}
-			}
-		}
+		r.p.add(part)
 	}
-	if !found {
-		return errors.New("OPC: the file content type must exist in the package")
-	}
+	r.p.contentTypes = *ct
 	return nil
+}
+
+func (r *Reader) loadContentType() (*contentTypes, error) {
+	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
+	files := r.r.Files()
+	for _, file := range files {
+		if file.Name() != "[Content_Types].xml" {
+			continue
+		}
+		reader, err := file.Open()
+		if err != nil {
+			return nil, err
+		}
+		return decodeContentTypes(reader)
+	}
+	return nil, errors.New("OPC: the file content type must exist in the package")
 }

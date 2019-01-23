@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -33,68 +34,36 @@ func (m *mockArchive) Files() []archiveFile {
 	return args.Get(0).([]archiveFile)
 }
 
-func TestReader_loadParts(t *testing.T) {
-	tests := []struct {
-		name string
-		r    *Reader
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.loadParts()
-		})
-	}
-}
-
-var buff = bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>
+var validContentTypes = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
 <Default Extension="png" ContentType="image/png"/>
-</Types>`)
+</Types>`
 
-var buff2 = bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?>
+var incorrectOverrideXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
+</Types>`
+
+var incorrectDefaultXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
+</Types>`
+
+var defaultDuplicated = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
 <Default Extension="png" ContentType="image/png"/>
 <Default Extension="png" ContentType="image/png2"/>
-</Types>`)
+</Types>`
 
-func TestReader_getContentType(t *testing.T) {
-	f1 := newMockFile("a.xml", nil, nil)
-	f2 := newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString("content")), nil)
-	f3 := newMockFile("[Content_Types].xml", ioutil.NopCloser(nil), errors.New(""))
-	f4 := newMockFile("[Content_Types].xml", ioutil.NopCloser(buff), nil)
-	f5 := newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("holi")), nil)
-	f6 := newMockFile(".png", ioutil.NopCloser(bytes.NewBufferString("aixo es una imatge")), nil)
-	f7 := newMockFile("[Content_Types].xml", ioutil.NopCloser(buff2), nil)
-	tests := []struct {
-		name    string
-		files   []archiveFile
-		wantErr bool
-	}{
-		{"base", []archiveFile{f4, f5, f6}, false},
-		{"incorrectContent", []archiveFile{f1, f2}, true},
-		{"incorrectDefault", []archiveFile{f5, f6, f7}, true},
-		{"openError", []archiveFile{f1, f3}, true},
-		{"noError", []archiveFile{f1, f1}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := new(mockArchive)
-			r := newReader(a)
-			a.On("Files").Return(tt.files)
-			if err := r.getContentType(); (err != nil) != tt.wantErr {
-				t.Errorf("Reader.getContentType() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			a.AssertExpectations(t)
-		})
-	}
-	f1.AssertExpectations(t)
-	f2.AssertExpectations(t)
-	f3.AssertExpectations(t)
-}
+var incorrectType = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
+<Default Extension="png" ContentType="image/png"/>
+<Default Extension="png" ContentType="image/png2"/>
+<Fake Extension="" ContentType=""/>
+</Types>`
 
 func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
 	f := new(mockFile)
@@ -103,4 +72,76 @@ func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
 		f.On("Open").Return(r, e)
 	}
 	return f
+}
+
+func Test_newReader(t *testing.T) {
+	p1 := newPackage()
+	p1.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
+	p1.parts["/HOLA/PHOTO.PNG"] = &Part{Name: "/hola/photo.png", ContentType: "image/png"}
+	p1.contentTypes.addOverride("/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
+	p1.contentTypes.addDefault("png", "image/png")
+
+	tests := []struct {
+		name    string
+		files   []archiveFile
+		p       *Package
+		wantErr bool
+	}{
+		{"base", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, p1, false},
+		{"incorrectContent", []archiveFile{
+			newMockFile("a.xml", nil, nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString("content")), nil),
+		}, nil, true},
+		{"incorrectDefault", []archiveFile{newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(defaultDuplicated)), nil),
+		}, nil, true},
+		{"openError", []archiveFile{
+			newMockFile("a.xml", nil, nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(nil), errors.New("")),
+		}, nil, true},
+		{"noError", []archiveFile{
+			newMockFile("a.xml", nil, nil),
+			newMockFile("a.xml", nil, nil),
+		}, nil, true},
+		{"fakeType", []archiveFile{
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectType)), nil),
+		}, nil, true},
+		{"noCType", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("fake/fake.fake", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, nil, true},
+		{"incorrectDefaultXML", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectDefaultXML)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, nil, true},
+		{"incorrectOverrideXML", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectOverrideXML)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := new(mockArchive)
+			a.On("Files").Return(tt.files)
+			got, err := newReader(a)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got.p, tt.p) {
+				t.Errorf("newReader() = %v, want %v", got, tt.p)
+			}
+		})
+	}
 }

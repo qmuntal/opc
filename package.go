@@ -105,7 +105,7 @@ type overrideContentTypeXML struct {
 }
 
 type contentTypes struct {
-	defaults  map[string]string // extenstion:contenttype
+	defaults  map[string]string // extension:contenttype
 	overrides map[string]string // partname:contenttype
 }
 
@@ -176,6 +176,20 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 	c.defaults[extension] = contentType
 }
 
+func (c *contentTypes) findType(name string) (string, error) {
+	if t, ok := c.overrides[name]; ok {
+		return t, nil
+	}
+	ext := filepath.Ext(name)
+	if ext != "" {
+		if t, ok := c.defaults[ext[1:]]; ok {
+			return t, nil
+		}
+	}
+	// ISO/IEC 29500-2 M2.8
+	return "", errors.New("OPC: A part shall have a content type")
+}
+
 type contentTypesXMLReader struct {
 	XMLName xml.Name `xml:"Types"`
 	XML     string   `xml:"xmlns,attr"`
@@ -206,8 +220,23 @@ func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-func decodeContentTypes(r io.Reader) (*contentTypesXMLReader, error) {
-	ct := new(contentTypesXMLReader)
-	err := xml.NewDecoder(r).Decode(ct)
-	return ct, err
+func decodeContentTypes(r io.Reader) (*contentTypes, error) {
+	ctdecode := new(contentTypesXMLReader)
+	if err := xml.NewDecoder(r).Decode(ctdecode); err != nil {
+		return nil, err
+	}
+	ct := new(contentTypes)
+	for _, c := range ctdecode.Types {
+		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
+			ext := strings.ToLower(cDefault.Extension)
+			//panic("M2.6")
+			if _, ok := ct.defaults[ext]; ok {
+				return nil, errors.New("OPC: there must be only one Default content type for each extension")
+			}
+			ct.addDefault(ext, cDefault.ContentType)
+		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
+			ct.addOverride(cOverride.PartName, cOverride.ContentType)
+		}
+	}
+	return ct, nil
 }
