@@ -52,9 +52,14 @@ var incorrectDefaultXML = `<?xml version="1.0" encoding="UTF-8"?>
 
 var defaultDuplicated = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
 <Default Extension="png" ContentType="image/png"/>
 <Default Extension="png" ContentType="image/png2"/>
+</Types>`
+
+var overrideDuplicated = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
+<Override ContentType="application2/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
 </Types>`
 
 var incorrectType = `<?xml version="1.0" encoding="UTF-8"?>
@@ -63,6 +68,13 @@ var incorrectType = `<?xml version="1.0" encoding="UTF-8"?>
 <Default Extension="png" ContentType="image/png"/>
 <Default Extension="png" ContentType="image/png2"/>
 <Fake Extension="" ContentType=""/>
+</Types>`
+
+var incorrectExtension = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
+<Default Extension="png" ContentType="image/png"/>
+<Default Extension="" ContentType="image/png2"/>
 </Types>`
 
 func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
@@ -92,32 +104,40 @@ func Test_newReader(t *testing.T) {
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, p1, false},
-		{"incorrectContent", []archiveFile{
-			newMockFile("a.xml", nil, nil),
-			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString("content")), nil),
-		}, nil, true},
-		{"incorrectDefault", []archiveFile{newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(defaultDuplicated)), nil),
-		}, nil, true},
 		{"openError", []archiveFile{
 			newMockFile("a.xml", nil, nil),
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(nil), errors.New("")),
 		}, nil, true},
-		{"noError", []archiveFile{
-			newMockFile("a.xml", nil, nil),
-			newMockFile("a.xml", nil, nil),
-		}, nil, true},
-		{"fakeType", []archiveFile{
-			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		{"duplicatedDefault", []archiveFile{
 			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectType)), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(defaultDuplicated)), nil),
 		}, nil, true},
-		{"noCType", []archiveFile{
+		{"duplicatedOverride", []archiveFile{
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(overrideDuplicated)), nil),
+		}, nil, true},
+		{"duplicatedPart", []archiveFile{
+			newMockFile("a.xml", nil, nil),
+			newMockFile("a.xml", nil, nil),
+		}, nil, true},
+		{"partWithoutContentType", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("fake/fake.fake", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, nil, true},
+		{"incorrectContent", []archiveFile{
+			newMockFile("a.xml", nil, nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString("content")), nil),
+		}, nil, true},
+		{"incorrectType", []archiveFile{
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectType)), nil),
+		}, nil, true},
+		{"incorrectExtension", []archiveFile{
+			newMockFile("hola/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectExtension)), nil),
 		}, nil, true},
 		{"incorrectDefaultXML", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(incorrectDefaultXML)), nil),

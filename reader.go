@@ -56,12 +56,13 @@ func (r *Reader) loadPackage() error {
 			return err
 		}
 		part := &Part{Name: n, ContentType: cType}
-
 		r.p.add(part)
 	}
 	r.p.contentTypes = *ct
 	return nil
 }
+
+//isRelationshipURI(uri string) bool
 
 func (r *Reader) loadContentType() (*contentTypes, error) {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.4

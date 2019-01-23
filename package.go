@@ -229,12 +229,20 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 	for _, c := range ctdecode.Types {
 		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
 			ext := strings.ToLower(cDefault.Extension)
-			//panic("M2.6")
+			if ext == "" {
+				// ISO/IEC 29500-2 M2.6
+				return nil, errors.New("OPC: the package implementer shall require a non-empty extension in a Default element")
+			}
 			if _, ok := ct.defaults[ext]; ok {
+				// ISO/IEC 29500-2 M2.5
 				return nil, errors.New("OPC: there must be only one Default content type for each extension")
 			}
 			ct.addDefault(ext, cDefault.ContentType)
 		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
+			if _, ok := ct.overrides[cOverride.PartName]; ok {
+				// ISO/IEC 29500-2 M2.5
+				return nil, errors.New("OPC: there must be only one Override content type for a Part Name")
+			}
 			ct.addOverride(cOverride.PartName, cOverride.ContentType)
 		}
 	}
