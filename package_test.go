@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func createFakePackage(m ...string) *Package {
+func createFakePackage(m ...string) *pkg {
 	parts := make(map[string]*Part, len(m))
 	for _, s := range m {
 		parts[strings.ToUpper(s)] = new(Part)
 	}
-	return &Package{
+	return &pkg{
 		parts: parts,
 	}
 }
@@ -20,9 +20,9 @@ func createFakePackage(m ...string) *Package {
 func Test_newPackage(t *testing.T) {
 	tests := []struct {
 		name string
-		want *Package
+		want *pkg
 	}{
-		{"base", &Package{
+		{"base", &pkg{
 			parts: make(map[string]*Part, 0),
 		},
 		},
@@ -42,7 +42,7 @@ func TestPackage_deletePart(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		p    *Package
+		p    *pkg
 		args args
 	}{
 		{"empty", newPackage(), args{"/a.xml"}},
@@ -52,7 +52,7 @@ func TestPackage_deletePart(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.p.deletePart(tt.args.uri)
 			if _, ok := tt.p.parts[strings.ToUpper(tt.args.uri)]; ok {
-				t.Error("Package.deletePart() should have deleted the part")
+				t.Error("pkg.deletePart() should have deleted the part")
 			}
 		})
 	}
@@ -64,7 +64,7 @@ func TestPackage_add(t *testing.T) {
 	}
 	tests := []struct {
 		name             string
-		p                *Package
+		p                *pkg
 		args             args
 		wantContentTypes contentTypes
 		wantErr          bool
@@ -79,11 +79,11 @@ func TestPackage_add(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.p.add(tt.args.part); (err != nil) != tt.wantErr {
-				t.Errorf("Package.add() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("pkg.add() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr && !reflect.DeepEqual(tt.p.contentTypes, tt.wantContentTypes) {
-				t.Errorf("Package.add() = %v, want %v", tt.p.contentTypes, tt.wantContentTypes)
+				t.Errorf("pkg.add() = %v, want %v", tt.p.contentTypes, tt.wantContentTypes)
 			}
 		})
 	}

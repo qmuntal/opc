@@ -25,22 +25,18 @@ const (
 	relationshipContentType = "application/vnd.openxmlformats-package.relationships+xml"
 )
 
-// A Package is a container that holds a collection of parts. The purpose of the package is to aggregate constituent
-// components of a document (or other type of content) into a single object.
-// The package is also capable of storing relationships between parts.
-// Defined in ISO/IEC 29500-2 §9.
-type Package struct {
+type pkg struct {
 	parts        map[string]*Part
 	contentTypes contentTypes
 }
 
-func newPackage() *Package {
-	return &Package{
+func newPackage() *pkg {
+	return &pkg{
 		parts: make(map[string]*Part, 0),
 	}
 }
 
-func (p *Package) add(part *Part) error {
+func (p *pkg) add(part *Part) error {
 	if err := part.validate(); err != nil {
 		return err
 	}
@@ -58,11 +54,11 @@ func (p *Package) add(part *Part) error {
 	return nil
 }
 
-func (p *Package) deletePart(uri string) {
+func (p *pkg) deletePart(uri string) {
 	delete(p.parts, strings.ToUpper(uri))
 }
 
-func (p *Package) checkPrefixCollision(uri string) bool {
+func (p *pkg) checkPrefixCollision(uri string) bool {
 	keys := make([]string, len(p.parts)+1)
 	keys[0] = uri
 	i := 1
@@ -85,12 +81,12 @@ func (p *Package) checkPrefixCollision(uri string) bool {
 	return false
 }
 
-func (p *Package) encodeContentTypes(w io.Writer) error {
+func (p *pkg) encodeContentTypes(w io.Writer) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	return xml.NewEncoder(w).Encode(p.contentTypes.toXML())
 }
 
-func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
+func (p *pkg) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 

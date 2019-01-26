@@ -31,7 +31,7 @@ const (
 type Writer struct {
 	Properties    CoreProperties  // Package metadata. Can be modified until the Writer is closed.
 	Relationships []*Relationship // RThe relationships associated to the package. Can be modified until the Writer is closed.
-	p             *Package
+	p             *pkg
 	w             *zip.Writer
 	last          *Part
 }
