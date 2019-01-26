@@ -11,3 +11,23 @@ Package gopc implements the ISO/IEC 29500-2, also known as the "Open Packaging C
 The Open Packaging specification describes an abstract model and physical format conventions for the use of XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and resources of a document within a package.
 
 The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
+
+## Examples
+### Write
+```
+// Create a file to write our archive to.
+f, _ := os.Create("example.xlsx")
+
+// Create a new OPC archive.
+w := gopc.NewWriter(f)
+
+// Create a new OPC part.
+name := gopc.NormalizePartName("docs\\readme.txt")
+part, _ := w.Create(name, "text/plain")
+
+// Write content to the part.
+part.Write([]byte("This archive contains some text files."))
+
+// Make sure to check the error on Close.
+w.Close()
+```
