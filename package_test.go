@@ -105,7 +105,7 @@ func TestCoreProperties_encode(t *testing.T) {
 	}{
 		{"empty", &CoreProperties{}, buildCoreString(""), false},
 		{"some", &CoreProperties{Category: "A", LastPrinted: "b"}, buildCoreString("<category>A</category><lastPrinted>b</lastPrinted>"), false},
-		{"all", &CoreProperties{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
+		{"all", &CoreProperties{"partName", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
 			buildCoreString("<category>a</category><contentStatus>b</contentStatus><dcterms:created>c</dcterms:created><dc:creator>d</dc:creator><dc:description>e</dc:description><dc:identifier>f</dc:identifier><keywords>g</keywords><dc:language>h</dc:language><lastModifiedBy>i</lastModifiedBy><lastPrinted>j</lastPrinted><dcterms:modified>k</dcterms:modified><revision>l</revision><dc:subject>m</dc:subject><dc:title>n</dc:title><version>o</version>"),
 			false},
 	}

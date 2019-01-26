@@ -13,25 +13,7 @@ import (
 type Part struct {
 	Name          string          // The name of the part.
 	ContentType   string          // The type of content stored in the part.
-	Relationships []*Relationship // The relationships associated to the part.
-}
-
-// CreateRelationship adds a new relationship to the Relationships slice.
-// The ID can be an empty string, if so a unique ID will be generated.
-// The input properties are not validated.
-func (p *Part) CreateRelationship(id, targetURI, relType string, targetMode TargetMode) *Relationship {
-	if id == "" {
-		id = uniqueRelationshipID()
-	}
-	r := &Relationship{
-		ID:         id,
-		RelType:    relType,
-		TargetURI:  targetURI,
-		TargetMode: targetMode,
-		sourceURI:  p.Name,
-	}
-	p.Relationships = append(p.Relationships, r)
-	return r
+	Relationships []*Relationship // The relationships associated to the part. Can be modified until the Writer is closed.
 }
 
 func (p *Part) validate() error {

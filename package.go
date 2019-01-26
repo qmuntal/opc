@@ -17,6 +17,14 @@ import (
 	"strings"
 )
 
+const (
+	corePropsRel            = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+	corePropsContentType    = "application/vnd.openxmlformats-package.core-properties+xml"
+	corePropsDefaultName    = "/props/core.xml"
+	contentTypesName        = "/[Content_Types].xml"
+	relationshipContentType = "application/vnd.openxmlformats-package.relationships+xml"
+)
+
 // A Package is a container that holds a collection of parts. The purpose of the package is to aggregate constituent
 // components of a document (or other type of content) into a single object.
 // The package is also capable of storing relationships between parts.
@@ -200,6 +208,7 @@ type corePropertiesXML struct {
 
 // CoreProperties enable users to get and set well-known and common sets of property metadata within packages.
 type CoreProperties struct {
+	PartName       string // Won't be writed to the package, only used to indicate the location of the CoreProperties part. If empty the default location is "/props/core.xml".
 	Category       string // A categorization of the content of this package.
 	ContentStatus  string // The status of the content.
 	Created        string // Date of creation of the resource.

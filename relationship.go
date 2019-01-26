@@ -25,35 +25,35 @@ const (
 const externalMode = "External"
 
 // Relationship is used to express a relationship between a source and a target part.
-// The only way to create a Relationship, is to call the Part.CreateRelationship()
-// or Package.CreateRelationship(). A relationship is owned by a part or by the package itself.
-// If the source part is deleted all the relationships it owns are also deleted.
-// A target of the relationship need not be present.
+// If the ID is not specified a random string with 8 characters will be generated.
+// If The TargetMode is not specified the default value is Internal.
 // Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
 	ID         string
-	RelType    string
+	Type       string // Defines the role of the relationship.
 	TargetURI  string
-	TargetMode TargetMode
-	sourceURI  string
+	TargetMode TargetMode // Indicates whether or not the target describes a resource inside the package or outside the package.
 }
 
-type relationshipXML struct {
-	ID        string `xml:"Id,attr"`
-	RelType   string `xml:"Type,attr"`
-	TargetURI string `xml:"Target,attr"`
-	Mode      string `xml:"TargetMode,attr,omitempty"`
+func (r *Relationship) ensureID() {
+	if r.ID != "" {
+		return
+	}
+
+	b := make([]byte, 8)
+	rand.Read(b)
+	r.ID = fmt.Sprintf("%x", b)
 }
 
-func (r *Relationship) validate() error {
+func (r *Relationship) validate(sourceURI string) error {
 	// ISO/IEC 29500-2 M1.26
 	if strings.TrimSpace(r.ID) == "" {
 		return errors.New("OPC: relationship identifier cannot be empty string or a string with just spaces")
 	}
-	if strings.TrimSpace(r.RelType) == "" {
+	if strings.TrimSpace(r.Type) == "" {
 		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
 	}
-	return validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode)
+	return validateRelationshipTarget(sourceURI, r.TargetURI, r.TargetMode)
 }
 
 func (r *Relationship) toXML() *relationshipXML {
@@ -61,7 +61,7 @@ func (r *Relationship) toXML() *relationshipXML {
 	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
-	x := &relationshipXML{ID: r.ID, RelType: r.RelType, TargetURI: r.TargetURI, Mode: targetMode}
+	x := &relationshipXML{ID: r.ID, Type: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
 	if r.TargetMode == ModeInternal {
 		if !strings.HasPrefix(x.TargetURI, "/") && !strings.HasPrefix(x.TargetURI, "\\") && !strings.HasPrefix(x.TargetURI, ".") {
 			x.TargetURI = "/" + x.TargetURI
@@ -120,11 +120,12 @@ func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMo
 	return result
 }
 
-func validateRelationships(rs []*Relationship) error {
+func validateRelationships(sourceUri string, rs []*Relationship) error {
 	var s struct{}
 	ids := make(map[string]struct{}, 0)
 	for _, r := range rs {
-		if err := r.validate(); err != nil {
+		r.ensureID()
+		if err := r.validate(sourceUri); err != nil {
 			return err
 		}
 		// ISO/IEC 29500-2 M1.26
@@ -136,10 +137,11 @@ func validateRelationships(rs []*Relationship) error {
 	return nil
 }
 
-func uniqueRelationshipID() string {
-	b := make([]byte, 8)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
+type relationshipXML struct {
+	ID        string `xml:"Id,attr"`
+	Type      string `xml:"Type,attr"`
+	TargetURI string `xml:"Target,attr"`
+	Mode      string `xml:"TargetMode,attr,omitempty"`
 }
 
 type relationshipsXML struct {
