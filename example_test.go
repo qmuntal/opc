@@ -28,8 +28,7 @@ func ExampleWriter() {
 	}
 
 	// Make sure to check the error on Close.
-	err = w.Close()
-	if err != nil {
+	if err := w.Close(); err != nil {
 		log.Fatal(err)
 	}
 }
