@@ -73,8 +73,8 @@ func Test_encodeRelationships(t *testing.T) {
 		wantW   string
 		wantErr bool
 	}{
-		{"base", args{[]*Relationship{&Relationship{ID: "fakeId", Type: "asd", TargetURI: "fakeTarget", TargetMode: ModeInternal}}}, expectedsolution(), false},
-		{"base2", args{[]*Relationship{&Relationship{ID: "fakeId", Type: "asd", TargetURI: "fakeTarget", TargetMode: ModeExternal}}}, expectedsolution2(), false},
+		{"base", args{[]*Relationship{{ID: "fakeId", Type: "asd", TargetURI: "fakeTarget", TargetMode: ModeInternal}}}, expectedsolution(), false},
+		{"base2", args{[]*Relationship{{ID: "fakeId", Type: "asd", TargetURI: "fakeTarget", TargetMode: ModeExternal}}}, expectedsolution2(), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
