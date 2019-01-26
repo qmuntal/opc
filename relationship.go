@@ -1,13 +1,13 @@
 package gopc
 
 import (
-	"crypto/rand"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // TargetMode is an enumerable for the different target modes.
@@ -23,6 +23,7 @@ const (
 )
 
 const externalMode = "External"
+const charBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
 
 // Relationship is used to express a relationship between a source and a target part.
 // If the ID is not specified a random string with 8 characters will be generated.
@@ -41,8 +42,11 @@ func (r *Relationship) ensureID() {
 	}
 
 	b := make([]byte, 8)
-	rand.Read(b)
-	r.ID = fmt.Sprintf("%x", b)
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range b {
+		b[i] = charBytes[rd.Intn(len(charBytes))]
+	}
+	r.ID = string(b)
 }
 
 func (r *Relationship) validate(sourceURI string) error {
