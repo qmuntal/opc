@@ -6,6 +6,8 @@
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
 # gopc
-The gopc library is an implementation of the Open Packaging Conventions (OPC) for Go
+Package gopc implements the ISO/IEC 29500-2, also known as the "Open Packaging Convention".
 
-WIP
+The Open Packaging specification describes an abstract model and physical format conventions for the use of XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and resources of a document within a package.
+
+The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
