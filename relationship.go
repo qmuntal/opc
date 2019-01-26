@@ -128,7 +128,6 @@ func validateRelationships(sourceUri string, rs []*Relationship) error {
 	var s struct{}
 	ids := make(map[string]struct{}, 0)
 	for _, r := range rs {
-		r.ensureID()
 		if err := r.validate(sourceUri); err != nil {
 			return err
 		}

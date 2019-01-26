@@ -16,12 +16,18 @@ type Part struct {
 	Relationships []*Relationship // The relationships associated to the part. Can be modified until the Writer is closed.
 }
 
-func (p *Part) validate() error {
+// Validate checks all the properties of the Part.
+// Useful to check if a Part will produce an error when adding it to a package.
+func (p *Part) Validate() error {
 	if err := validatePartName(p.Name); err != nil {
 		return err
 	}
 
-	return validateContentType(p.ContentType)
+	if err := validateContentType(p.ContentType); err != nil {
+		return err
+	}
+
+	return validateRelationships(p.Name, p.Relationships)
 }
 
 var defaultRef, _ = url.Parse("http://defaultcontainer/")

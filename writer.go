@@ -124,6 +124,9 @@ func (w *Writer) createOwnRelationships() error {
 	if len(w.Relationships) == 0 {
 		return nil
 	}
+	for _, r := range w.Relationships {
+		r.ensureID()
+	}
 	if err := validateRelationships("/", w.Relationships); err != nil {
 		return err
 	}
@@ -137,6 +140,9 @@ func (w *Writer) createOwnRelationships() error {
 func (w *Writer) createLastPartRelationships() error {
 	if w.last == nil || len(w.last.Relationships) == 0 {
 		return nil
+	}
+	for _, r := range w.last.Relationships {
+		r.ensureID()
 	}
 	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
 		return err

@@ -37,7 +37,7 @@ func newPackage() *pkg {
 }
 
 func (p *pkg) add(part *Part) error {
-	if err := part.validate(); err != nil {
+	if err := part.Validate(); err != nil {
 		return err
 	}
 	upperURI := strings.ToUpper(part.Name)
