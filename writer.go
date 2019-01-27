@@ -113,7 +113,7 @@ func (w *Writer) createCoreProperties() error {
 
 func (w *Writer) createContentTypes() error {
 	// ISO/IEC 29500-2 M3.10
-	cw, err := w.addToPackage(&Part{Name: contentTypesName}, CompressionNormal)
+	cw, err := w.addToPackage(&Part{Name: contentTypesName, ContentType: "text/xml"}, CompressionNormal)
 	if err != nil {
 		return err
 	}

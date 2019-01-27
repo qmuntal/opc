@@ -60,8 +60,8 @@ func TestWriter_Close(t *testing.T) {
 		w       *Writer
 		wantErr bool
 	}{
-		{"invalidContentType", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{})}, true},
 		{"base", NewWriter(&bytes.Buffer{}), false},
+		{"invalidContentType", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{})}, true},
 		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{})}, false},
 		{"invalidPartRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, true},
 		{"invalidOwnRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Relationships: []*Relationship{{}}}, true},

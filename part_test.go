@@ -58,9 +58,9 @@ func TestPart_validate(t *testing.T) {
 		p       *Part
 		wantErr bool
 	}{
-		//{"gen-delims", &Part{"/[docs]/a.xml", "a/b", nil}, false},
 		{"base", &Part{"/docs/a.xml", "a/b", nil}, false},
-		{"mediaEmpty", &Part{"/a.txt", "", nil}, false},
+		{"gen-delims", &Part{"/[docs]/a.xml", "a/b", nil}, false},
+		{"mediaEmpty", &Part{"/a.txt", "", nil}, true},
 		{"emptyName", &Part{"", "a/b", nil}, true},
 		{"onlyspaces", &Part{"  ", "a/b", nil}, true},
 		{"onlyslash", &Part{"/", "a/b", nil}, true},

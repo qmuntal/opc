@@ -9,7 +9,6 @@ package gopc
 
 import (
 	"encoding/xml"
-	"errors"
 	"io"
 	"mime"
 	"path/filepath"
@@ -47,13 +46,11 @@ func (p *pkg) add(part *Part) error {
 		return err
 	}
 	upperURI := strings.ToUpper(part.Name)
-	// ISO/IEC 29500-2 M1.12
 	if p.partExists(upperURI) {
-		return errors.New("OPC: a package shall not contain equivalent part names")
+		return &Error{112, part.Name}
 	}
-	// ISO/IEC 29500-2 M1.11
 	if p.checkPrefixCollision(upperURI) {
-		return errors.New("OPC: a package shall not contain a part with a part name derived from another part name by appending segments to it")
+		return &Error{111, part.Name}
 	}
 	p.contentTypes.add(part.Name, part.ContentType)
 	p.parts[upperURI] = part
@@ -149,9 +146,6 @@ func (c *contentTypes) ensureOverridesMap() {
 // Add needs a valid content type, else the behaviour is undefined
 func (c *contentTypes) add(partName, contentType string) error {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.3
-	if len(contentType) == 0 {
-		return nil
-	}
 	t, params, _ := mime.ParseMediaType(contentType)
 	contentType = mime.FormatMediaType(t, params)
 

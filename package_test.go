@@ -70,7 +70,7 @@ func TestPackage_add(t *testing.T) {
 		wantErr          bool
 	}{
 		{"base", createFakePackage("/b.xml"), args{&Part{"/A.xml", "a/b", nil}}, contentTypes{map[string]string{"xml": "a/b"}, nil}, false},
-		{"emptyContentType", createFakePackage(), args{&Part{"/A.xml", "", nil}}, contentTypes{}, false},
+		{"emptyContentType", createFakePackage(), args{&Part{"/A.xml", "", nil}}, contentTypes{}, true},
 		{"noExtension", createFakePackage(), args{&Part{"/A", "a/b", nil}}, contentTypes{nil, map[string]string{"/A": "a/b"}}, false},
 		{"duplicated", createFakePackage("/a.xml"), args{&Part{"/A.xml", "a/b", nil}}, contentTypes{}, true},
 		{"collision1", createFakePackage("/abc.xml", "/xyz/PQR/A.JPG"), args{&Part{"/abc.xml/b.xml", "a/b", nil}}, contentTypes{}, true},

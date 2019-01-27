@@ -1,7 +1,6 @@
 package gopc
 
 import (
-	"errors"
 	"mime"
 	"net/url"
 	"strings"
@@ -21,7 +20,7 @@ func (p *Part) validate() error {
 		return err
 	}
 
-	if err := validateContentType(p.ContentType); err != nil {
+	if err := p.validateContentType(); err != nil {
 		return err
 	}
 
@@ -66,34 +65,26 @@ func NormalizePartName(name string) string {
 	return p.EscapedPath()
 }
 
-func validateContentType(contentType string) error {
-	if len(contentType) == 0 {
-		return nil
+func (p *Part) validateContentType() error {
+	if strings.TrimSpace(p.ContentType) == "" {
+		return &Error{102, p.Name}
 	}
 
-	// ISO/IEC 29500-2 M1.14
-	if contentType[0] == ' ' || strings.HasSuffix(contentType, " ") {
-		return errors.New("OPC: a content type also shall not have linear, leading or trailing white space")
-	}
-
-	// ISO/IEC 29500-2 M1.13 and M1.14
-	t, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return err
+	if p.ContentType[0] == ' ' || strings.HasSuffix(p.ContentType, " ") {
+		return &Error{114, p.Name}
 	}
 
 	// mime package accepts Content-Disposition, which does not start with slash
-	if !strings.Contains(t, "/") {
-		return errors.New("OPC: expected slash in content type")
+	if t, _, err := mime.ParseMediaType(p.ContentType); err != nil || !strings.Contains(t, "/") {
+		return &Error{113, p.Name}
 	}
 
 	return nil
 }
 
 func validatePartName(name string) error {
-	// ISO/IEC 29500-2 M1.1
 	if strings.TrimSpace(name) == "" {
-		return errors.New("OPC: a part name shall not be empty")
+		return &Error{101, name}
 	}
 
 	if err := validateChars(name); err != nil {
@@ -113,53 +104,45 @@ func validateURL(name string) error {
 		return err
 	}
 
-	// ISO/IEC 29500-2 M1.4
 	if name[0] != '/' || encodedURL.IsAbs() {
-		return errors.New("OPC: a part name shall start with a forward slash character")
+		return &Error{104, name}
 	}
 
-	// ISO/IEC 29500-2 M1.6
 	if name != encodedURL.EscapedPath() {
-		return errors.New("OPC: a segment shall not hold any characters other than pchar characters")
+		return &Error{106, name}
 	}
 	return nil
 }
 
 func validateChars(name string) error {
-	// ISO/IEC 29500-2 M1.5
 	if strings.HasSuffix(name, "/") {
-		return errors.New("OPC: a part name shall not have a forward slash as the last character")
+		return &Error{105, name}
 	}
 
-	// ISO/IEC 29500-2 M1.9
 	if strings.HasSuffix(name, ".") {
-		return errors.New("OPC: a segment shall not end with a dot character")
+		return &Error{109, name}
 	}
 
-	// ISO/IEC 29500-2 M1.3
 	if strings.Contains(name, "//") {
-		return errors.New("OPC: a part name shall not have empty segments")
+		return &Error{103, name}
 	}
 	return nil
 }
 
 func validateSegments(name string) error {
-	// ISO/IEC 29500-2 M1.10
 	if strings.Contains(name, "/./") || strings.Contains(name, "/../") {
-		return errors.New("OPC: a segment shall include at least one non-dot character")
+		return &Error{110, name}
 	}
 
 	u := strings.ToUpper(name)
-	// ISO/IEC 29500-2 M1.7
 	// "/" "\"
 	if strings.Contains(u, "%5C") || strings.Contains(u, "%2F") {
-		return errors.New("OPC: a segment shall not contain percent-encoded forward slash or backward slash characters")
+		return &Error{107, name}
 	}
 
-	// ISO/IEC 29500-2 M1.8
 	// "-" "." "_" "~"
 	if strings.Contains(u, "%2D") || strings.Contains(u, "%2E") || strings.Contains(u, "%5F") || strings.Contains(u, "%7E") {
-		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters")
+		return &Error{108, name}
 	}
 	return nil
 }

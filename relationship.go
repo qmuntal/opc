@@ -2,7 +2,6 @@ package gopc
 
 import (
 	"encoding/xml"
-	"errors"
 	"io"
 	"math/rand"
 	"net/url"
@@ -50,12 +49,11 @@ func (r *Relationship) ensureID() {
 }
 
 func (r *Relationship) validate(sourceURI string) error {
-	// ISO/IEC 29500-2 M1.26
 	if strings.TrimSpace(r.ID) == "" {
-		return errors.New("OPC: relationship identifier cannot be empty string or a string with just spaces")
+		return &Error{126, sourceURI}
 	}
 	if strings.TrimSpace(r.Type) == "" {
-		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
+		return &Error{127, sourceURI}
 	}
 	return validateRelationshipTarget(sourceURI, r.TargetURI, r.TargetMode)
 }
@@ -98,42 +96,36 @@ func isRelationshipURI(uri string) bool {
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
 func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMode) error {
-	// ISO/IEC 29500-2 M1.28
 	uri, err := url.Parse(strings.TrimSpace(targetURI))
 	if err != nil || uri.String() == "" {
-		return errors.New("OPC: relationship target URI reference shall be a URI or a relative reference")
+		return &Error{128, sourceURI}
 	}
 
 	// ISO/IEC 29500-2 M1.29
 	if targetMode == ModeInternal && uri.IsAbs() {
-		return errors.New("OPC: relationship target URI must be relative if the TargetMode is Internal")
+		return &Error{129, sourceURI}
 	}
 
-	var result error
 	if targetMode != ModeExternal && !uri.IsAbs() {
 		source, err := url.Parse(strings.TrimSpace(sourceURI))
-		if err != nil || source.String() == "" {
-			// ISO/IEC 29500-2 M1.28
-			result = errors.New("OPC: relationship source URI reference shall be a URI or a relative reference")
-		} else if isRelationshipURI(source.ResolveReference(uri).String()) {
-			// ISO/IEC 29500-2 M1.26
-			result = errors.New("OPC: The relationships part shall not have relationships to any other part")
+		if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
+			return &Error{125, sourceURI}
 		}
 	}
 
-	return result
+	return nil
 }
 
-func validateRelationships(sourceUri string, rs []*Relationship) error {
+func validateRelationships(sourceURI string, rs []*Relationship) error {
 	var s struct{}
 	ids := make(map[string]struct{}, 0)
 	for _, r := range rs {
-		if err := r.validate(sourceUri); err != nil {
+		if err := r.validate(sourceURI); err != nil {
 			return err
 		}
 		// ISO/IEC 29500-2 M1.26
 		if _, ok := ids[r.ID]; ok {
-			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
+			return &Error{126, sourceURI}
 		}
 		ids[r.ID] = s
 	}
