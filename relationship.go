@@ -30,9 +30,9 @@ const charBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789
 // If The TargetMode is not specified the default value is Internal.
 // Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
-	ID         string
-	Type       string // Defines the role of the relationship.
-	TargetURI  string
+	ID         string     // The relationship identifier which shall conform the xsd:ID naming restrictions and unique within the part.
+	Type       string     // Defines the role of the relationship.
+	TargetURI  string     // Holds a URI that points to a target resource. If expressed as a relative URI, it is resolved against the base URI of the Relationships source part.
 	TargetMode TargetMode // Indicates whether or not the target describes a resource inside the package or outside the package.
 }
 
