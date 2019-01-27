@@ -47,10 +47,10 @@ func (p *pkg) add(part *Part) error {
 	}
 	upperURI := strings.ToUpper(part.Name)
 	if p.partExists(upperURI) {
-		return &Error{112, part.Name}
+		return newError(112, part.Name)
 	}
 	if p.checkPrefixCollision(upperURI) {
-		return &Error{111, part.Name}
+		return newError(111, part.Name)
 	}
 	p.contentTypes.add(part.Name, part.ContentType)
 	p.parts[upperURI] = part

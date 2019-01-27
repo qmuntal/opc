@@ -50,12 +50,12 @@ func (r *Relationship) ensureID() {
 
 func (r *Relationship) validate(sourceURI string) error {
 	if strings.TrimSpace(r.ID) == "" {
-		return &Error{126, sourceURI}
+		return newErrorRelationship(126, sourceURI, r.ID)
 	}
 	if strings.TrimSpace(r.Type) == "" {
-		return &Error{127, sourceURI}
+		return newErrorRelationship(127, sourceURI, r.ID)
 	}
-	return validateRelationshipTarget(sourceURI, r.TargetURI, r.TargetMode)
+	return r.validateRelationshipTarget(sourceURI)
 }
 
 func (r *Relationship) toXML() *relationshipXML {
@@ -95,21 +95,21 @@ func isRelationshipURI(uri string) bool {
 }
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
-func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMode) error {
-	uri, err := url.Parse(strings.TrimSpace(targetURI))
+func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
+	uri, err := url.Parse(strings.TrimSpace(r.TargetURI))
 	if err != nil || uri.String() == "" {
-		return &Error{128, sourceURI}
+		return newErrorRelationship(128, sourceURI, r.ID)
 	}
 
 	// ISO/IEC 29500-2 M1.29
-	if targetMode == ModeInternal && uri.IsAbs() {
-		return &Error{129, sourceURI}
+	if r.TargetMode == ModeInternal && uri.IsAbs() {
+		return newErrorRelationship(129, sourceURI, r.ID)
 	}
 
-	if targetMode != ModeExternal && !uri.IsAbs() {
+	if r.TargetMode != ModeExternal && !uri.IsAbs() {
 		source, err := url.Parse(strings.TrimSpace(sourceURI))
 		if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
-			return &Error{125, sourceURI}
+			return newErrorRelationship(125, sourceURI, r.ID)
 		}
 	}
 
@@ -125,7 +125,7 @@ func validateRelationships(sourceURI string, rs []*Relationship) error {
 		}
 		// ISO/IEC 29500-2 M1.26
 		if _, ok := ids[r.ID]; ok {
-			return &Error{126, sourceURI}
+			return newErrorRelationship(126, sourceURI, r.ID)
 		}
 		ids[r.ID] = s
 	}

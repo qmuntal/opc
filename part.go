@@ -8,7 +8,6 @@ import (
 
 // A Part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
-// The part properties will be validated before writing or reading from disk.
 type Part struct {
 	Name          string          // The name of the part.
 	ContentType   string          // The type of content stored in the part.
@@ -67,16 +66,16 @@ func NormalizePartName(name string) string {
 
 func (p *Part) validateContentType() error {
 	if strings.TrimSpace(p.ContentType) == "" {
-		return &Error{102, p.Name}
+		return newError(102, p.Name)
 	}
 
 	if p.ContentType[0] == ' ' || strings.HasSuffix(p.ContentType, " ") {
-		return &Error{114, p.Name}
+		return newError(114, p.Name)
 	}
 
 	// mime package accepts Content-Disposition, which does not start with slash
 	if t, _, err := mime.ParseMediaType(p.ContentType); err != nil || !strings.Contains(t, "/") {
-		return &Error{113, p.Name}
+		return newError(113, p.Name)
 	}
 
 	return nil
@@ -84,7 +83,7 @@ func (p *Part) validateContentType() error {
 
 func validatePartName(name string) error {
 	if strings.TrimSpace(name) == "" {
-		return &Error{101, name}
+		return newError(101, name)
 	}
 
 	if err := validateChars(name); err != nil {
@@ -105,44 +104,44 @@ func validateURL(name string) error {
 	}
 
 	if name[0] != '/' || encodedURL.IsAbs() {
-		return &Error{104, name}
+		return newError(104, name)
 	}
 
 	if name != encodedURL.EscapedPath() {
-		return &Error{106, name}
+		return newError(106, name)
 	}
 	return nil
 }
 
 func validateChars(name string) error {
 	if strings.HasSuffix(name, "/") {
-		return &Error{105, name}
+		return newError(105, name)
 	}
 
 	if strings.HasSuffix(name, ".") {
-		return &Error{109, name}
+		return newError(109, name)
 	}
 
 	if strings.Contains(name, "//") {
-		return &Error{103, name}
+		return newError(103, name)
 	}
 	return nil
 }
 
 func validateSegments(name string) error {
 	if strings.Contains(name, "/./") || strings.Contains(name, "/../") {
-		return &Error{110, name}
+		return newError(110, name)
 	}
 
 	u := strings.ToUpper(name)
 	// "/" "\"
 	if strings.Contains(u, "%5C") || strings.Contains(u, "%2F") {
-		return &Error{107, name}
+		return newError(107, name)
 	}
 
 	// "-" "." "_" "~"
 	if strings.Contains(u, "%2D") || strings.Contains(u, "%2E") || strings.Contains(u, "%5F") || strings.Contains(u, "%7E") {
-		return &Error{108, name}
+		return newError(108, name)
 	}
 	return nil
 }

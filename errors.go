@@ -30,6 +30,15 @@ var errorsString = map[int]string{
 type Error struct {
 	code     int
 	partName string
+	relID    string
+}
+
+func newError(code int, partName string) *Error {
+	return &Error{code, partName, ""}
+}
+
+func newErrorRelationship(code int, partName, relID string) *Error {
+	return &Error{code, partName, relID}
 }
 
 // Code of the error as described in the OPC specs.
@@ -46,9 +55,15 @@ func (e *Error) Code() int {
 	return e.code
 }
 
-// PartName of the Part associated to the error.
+// PartName returns the name of the Part associated to the error.
 func (e *Error) PartName() string {
 	return e.partName
+}
+
+// RelationshipID returns the ID of the relationship associated to the error.
+// If the error is not associated to a relationship, the value is empty.
+func (e *Error) RelationshipID() string {
+	return e.relID
 }
 
 func (e *Error) Error() string {
