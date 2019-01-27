@@ -16,9 +16,7 @@ type Part struct {
 	Relationships []*Relationship // The relationships associated to the part. Can be modified until the Writer is closed.
 }
 
-// Validate checks all the properties of the Part.
-// Useful to check if a Part will produce an error when adding it to a package.
-func (p *Part) Validate() error {
+func (p *Part) validate() error {
 	if err := validatePartName(p.Name); err != nil {
 		return err
 	}

@@ -130,7 +130,7 @@ func (w *Writer) createOwnRelationships() error {
 	if err := validateRelationships("/", w.Relationships); err != nil {
 		return err
 	}
-	rw, err := w.addToPackage(&Part{Name: "/_rels/.rels", ContentType: relationshipContentType}, CompressionNormal)
+	rw, err := w.addToPackage(&Part{Name: packageRelName, ContentType: relationshipContentType}, CompressionNormal)
 	if err != nil {
 		return err
 	}

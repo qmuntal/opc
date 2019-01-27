@@ -23,6 +23,7 @@ const (
 	corePropsDefaultName    = "/props/core.xml"
 	contentTypesName        = "/[Content_Types].xml"
 	relationshipContentType = "application/vnd.openxmlformats-package.relationships+xml"
+	packageRelName          = "/_rels/.rels"
 )
 
 type pkg struct {
@@ -36,14 +37,19 @@ func newPackage() *pkg {
 	}
 }
 
+func (p *pkg) partExists(partName string) bool {
+	_, ok := p.parts[strings.ToUpper(partName)]
+	return ok
+}
+
 func (p *pkg) add(part *Part) error {
-	if err := part.Validate(); err != nil {
+	if err := part.validate(); err != nil {
 		return err
 	}
 	upperURI := strings.ToUpper(part.Name)
 	// ISO/IEC 29500-2 M1.12
-	if _, ok := p.parts[upperURI]; ok {
-		return errors.New("OPC: packages shall not contain equivalent part names")
+	if p.partExists(upperURI) {
+		return errors.New("OPC: a package shall not contain equivalent part names")
 	}
 	// ISO/IEC 29500-2 M1.11
 	if p.checkPrefixCollision(upperURI) {
