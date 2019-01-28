@@ -46,7 +46,6 @@ func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
 var validContentTypes = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
-<Override ContentType="application/vnd.openxmlformats-package.core-properties+xml" PartName="/docProps/core.xml"/>
 <Default Extension="png" ContentType="image/png"/>
 <Default ContentType="application/xml" Extension="xml"/>
 </Types>`
@@ -62,43 +61,41 @@ func Test_newReader(t *testing.T) {
 	p1 := newPackage()
 	p1.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
 	p1.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p1.parts["/DOCPROPS/CORE.XML"] = &Part{Name: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"}
+	p1.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
 	p1.contentTypes.addOverride("/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
-	p1.contentTypes.addOverride("/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml")
 	p1.contentTypes.addDefault("png", "image/png")
 	p1.contentTypes.addDefault("xml", "application/xml")
 
 	p2 := newPackage()
 	p2.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
-			&Relationship{ID: "rel-2", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal, sourceURI: ""},
+			&Relationship{ID: "rel-1", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
+			&Relationship{ID: "rel-2", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p2.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p2.parts["/DOCPROPS/CORE.XML"] = &Part{Name: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"}
+	p2.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
 	p2.contentTypes.addOverride("/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
-	p2.contentTypes.addOverride("/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml")
 	p2.contentTypes.addDefault("xml", "application/xml")
 	p2.contentTypes.addDefault("png", "image/png")
 
 	tests := []struct {
 		name    string
 		files   []archiveFile
-		p       *Package
+		p       *pkg
 		wantErr bool
 	}{
 		{"baseWithRels", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/_rels/app.xml.rels", ioutil.NopCloser(bytes.NewBufferString(validRelationships)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, p2, false},
 		{"baseWithoutRels", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, p1, false},
 	}
@@ -156,7 +153,7 @@ func Test_newReader_ContentType(t *testing.T) {
 	tests := []struct {
 		name    string
 		files   []archiveFile
-		p       *Package
+		p       *pkg
 		wantErr bool
 	}{
 		{"openError", []archiveFile{
@@ -242,42 +239,40 @@ func Test_newReader_Relationships(t *testing.T) {
 	p3 := newPackage()
 	p3.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
-			&Relationship{ID: "rel-2", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal, sourceURI: ""},
+			&Relationship{ID: "rel-1", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
+			&Relationship{ID: "rel-2", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p3.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p3.parts["/DOCPROPS/CORE.XML"] = &Part{Name: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"}
+	p3.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
 	p3.contentTypes.addOverride("/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
-	p3.contentTypes.addOverride("/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml")
 	p3.contentTypes.addDefault("xml", "application/xml")
 	p3.contentTypes.addDefault("png", "image/png")
 
 	p4 := newPackage()
 	p4.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
-			&Relationship{ID: "rel-2", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal, sourceURI: ""},
+			&Relationship{ID: "rel-1", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
+			&Relationship{ID: "rel-2", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p4.parts["/PICTURES/SUMMER/PHOTO.PNG"] = &Part{Name: "/pictures/summer/photo.png", ContentType: "image/png",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-3", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
-			&Relationship{ID: "rel-4", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
-			&Relationship{ID: "rel-5", RelType: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal, sourceURI: ""},
+			&Relationship{ID: "rel-3", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
+			&Relationship{ID: "rel-4", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
+			&Relationship{ID: "rel-5", Type: "exampleRelationType", TargetURI: "/", TargetMode: ModeInternal},
 		},
 	}
 	p4.parts["/PICTURES/SUMMER/PHOTO2.PNG"] = &Part{Name: "/pictures/summer/photo2.png", ContentType: "image/png"}
-	p4.parts["/DOCPROPS/CORE.XML"] = &Part{Name: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"}
+	p4.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
 	p4.contentTypes.addOverride("/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
-	p4.contentTypes.addOverride("/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml")
 	p4.contentTypes.addDefault("xml", "application/xml")
 	p4.contentTypes.addDefault("png", "image/png")
 
 	tests := []struct {
 		name    string
 		files   []archiveFile
-		p       *Package
+		p       *pkg
 		wantErr bool
 	}{
 		{"complexRelationships", []archiveFile{
@@ -285,7 +280,7 @@ func Test_newReader_Relationships(t *testing.T) {
 			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(generalRelationships)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("docProps/_rels/app.xml.rels", ioutil.NopCloser(bytes.NewBufferString(validRelationships)), nil),
-			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, p3, false},
 
@@ -293,7 +288,7 @@ func Test_newReader_Relationships(t *testing.T) {
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("docProps/_rels/app.xml.rels", ioutil.NopCloser(bytes.NewBufferString(validRelationships)), nil),
-			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/summer/photo2.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/summer/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("pictures/summer/_rels/photo.png.rels", ioutil.NopCloser(bytes.NewBufferString(relationship2)), nil),
