@@ -19,7 +19,7 @@ type archive interface {
 // Reader implements a OPC file reader.
 type Reader struct {
 	Parts []*Part
-	p     *Package
+	p     *pkg
 	r     archive
 }
 

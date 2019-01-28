@@ -11,11 +11,29 @@ import (
 
 const opcCtx = "opc"
 
+// CompressionOption is an enumerable for the different compression options.
+type CompressionOption int
+
+const (
+	// CompressionNone disables the compression.
+	CompressionNone CompressionOption = iota - 1
+	// CompressionNormal is optimized for a reasonable compromise between size and performance.
+	CompressionNormal
+	// CompressionMaximum is optimized for size.
+	CompressionMaximum
+	// CompressionFast is optimized for performance.
+	CompressionFast
+	// CompressionSuperFast is optimized for super performance.
+	CompressionSuperFast
+)
+
 // Writer implements a OPC file writer.
 type Writer struct {
-	p    *Package
-	w    *zip.Writer
-	last *Part
+	Properties    CoreProperties  // Package metadata. Can be modified until the Writer is closed.
+	Relationships []*Relationship // RThe relationships associated to the package. Can be modified until the Writer is closed.
+	p             *pkg
+	w             *zip.Writer
+	last          *Part
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -26,7 +44,7 @@ func NewWriter(w io.Writer) *Writer {
 // Flush flushes any buffered data to the underlying writer.
 // Part metadata, relationships, content types and other OPC related files won't be flushed.
 // Calling Flush is not normally necessary; calling Close is sufficient.
-// Useful to do simultaneos writing and reading.
+// Useful to do simultaneous writing and reading.
 func (w *Writer) Flush() error {
 	return w.w.Flush()
 }
@@ -34,11 +52,19 @@ func (w *Writer) Flush() error {
 // Close finishes writing the opc file.
 // It does not close the underlying writer.
 func (w *Writer) Close() error {
-	if err := w.createContentTypes(); err != nil {
+	if err := w.createLastPartRelationships(); err != nil {
 		w.w.Close()
 		return err
 	}
-	if err := w.createRelationships(); err != nil {
+	if err := w.createCoreProperties(); err != nil {
+		w.w.Close()
+		return err
+	}
+	if err := w.createOwnRelationships(); err != nil {
+		w.w.Close()
+		return err
+	}
+	if err := w.createContentTypes(); err != nil {
 		w.w.Close()
 		return err
 	}
@@ -68,19 +94,57 @@ func (w *Writer) CreatePart(part *Part, compression CompressionOption) (io.Write
 	return w.add(part, compression)
 }
 
+func (w *Writer) createCoreProperties() error {
+	if w.Properties == (CoreProperties{}) {
+		return nil
+	}
+	partName := w.Properties.PartName
+	if partName == "" {
+		partName = corePropsDefaultName
+	}
+	part := &Part{Name: partName, ContentType: corePropsContentType}
+	cw, err := w.addToPackage(part, CompressionNormal)
+	if err != nil {
+		return err
+	}
+	w.Relationships = append(w.Relationships, &Relationship{"", corePropsRel, part.Name, ModeInternal})
+	return w.Properties.encode(cw)
+}
+
 func (w *Writer) createContentTypes() error {
-	cw, err := w.addToPackage(&Part{Name: "/[Content_Types].xml"}, CompressionNormal)
+	// ISO/IEC 29500-2 M3.10
+	cw, err := w.addToPackage(&Part{Name: contentTypesName, ContentType: "text/xml"}, CompressionNormal)
 	if err != nil {
 		return err
 	}
 	return w.p.encodeContentTypes(cw)
 }
 
-func (w *Writer) createRelationships() error {
+func (w *Writer) createOwnRelationships() error {
+	if len(w.Relationships) == 0 {
+		return nil
+	}
+	for _, r := range w.Relationships {
+		r.ensureID()
+	}
+	if err := validateRelationships("/", w.Relationships); err != nil {
+		return err
+	}
+	rw, err := w.addToPackage(&Part{Name: packageRelName, ContentType: relationshipContentType}, CompressionNormal)
+	if err != nil {
+		return err
+	}
+	return encodeRelationships(rw, w.Relationships)
+}
+
+func (w *Writer) createLastPartRelationships() error {
 	if w.last == nil || len(w.last.Relationships) == 0 {
 		return nil
 	}
-	if err := validateRelationships(w.last.Relationships); err != nil {
+	for _, r := range w.last.Relationships {
+		r.ensureID()
+	}
+	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
 		return err
 	}
 	dirName := filepath.Dir(w.last.Name)[1:]
@@ -88,7 +152,7 @@ func (w *Writer) createRelationships() error {
 		dirName = "/" + dirName
 	}
 	relName := fmt.Sprintf("%s/_rels/%s.rels", dirName, filepath.Base(w.last.Name))
-	rw, err := w.addToPackage(&Part{Name: relName, ContentType: "application/vnd.openxmlformats-package.relationships+xml"}, CompressionNormal)
+	rw, err := w.addToPackage(&Part{Name: relName, ContentType: relationshipContentType}, CompressionNormal)
 	if err != nil {
 		return err
 	}
@@ -96,7 +160,7 @@ func (w *Writer) createRelationships() error {
 }
 
 func (w *Writer) add(part *Part, compression CompressionOption) (io.Writer, error) {
-	if err := w.createRelationships(); err != nil {
+	if err := w.createLastPartRelationships(); err != nil {
 		return nil, err
 	}
 	pw, err := w.addToPackage(part, compression)

@@ -1,13 +1,12 @@
 package gopc
 
 import (
-	"crypto/rand"
 	"encoding/xml"
-	"errors"
-	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // TargetMode is an enumerable for the different target modes.
@@ -23,32 +22,17 @@ const (
 )
 
 const externalMode = "External"
-
-const (
-	// RelTypeMetaDataCoreProps defines a core properties relationship.
-	RelTypeMetaDataCoreProps = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
-	// RelTypeDigitalSignature defines a digital signature relationship.
-	RelTypeDigitalSignature = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/signature"
-	// RelTypeDigitalSignatureOrigin defines a digital signature origin relationship.
-	RelTypeDigitalSignatureOrigin = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin"
-	// RelTypeDigitalSignatureCert defines a digital signature certificate relationship.
-	RelTypeDigitalSignatureCert = "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/certificate"
-	// RelTypeThumbnail defines a thumbnail relationship.
-	RelTypeThumbnail = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"
-)
+const charBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
 
 // Relationship is used to express a relationship between a source and a target part.
-// The only way to create a Relationship, is to call the Part.CreateRelationship()
-// or Package.CreateRelationship(). A relationship is owned by a part or by the package itself.
-// If the source part is deleted all the relationships it owns are also deleted.
-// A target of the relationship need not be present.
+// If the ID is not specified a random string with 8 characters will be generated.
+// If The TargetMode is not specified the default value is Internal.
 // Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
-	ID         string
-	RelType    string
-	TargetURI  string
-	TargetMode TargetMode
-	sourceURI  string
+	ID         string     // The relationship identifier which shall conform the xsd:ID naming restrictions and unique within the part.
+	Type       string     // Defines the role of the relationship.
+	TargetURI  string     // Holds a URI that points to a target resource. If expressed as a relative URI, it is resolved against the base URI of the Relationships source part.
+	TargetMode TargetMode // Indicates whether or not the target describes a resource inside the package or outside the package.
 }
 
 type relationshipsXML struct {
@@ -64,15 +48,27 @@ type relationshipXML struct {
 	Mode      string `xml:"TargetMode,attr,omitempty"`
 }
 
-func (r *Relationship) validate() error {
-	// ISO/IEC 29500-2 M1.26
+func (r *Relationship) ensureID() {
+	if r.ID != "" {
+		return
+	}
+
+	b := make([]byte, 8)
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range b {
+		b[i] = charBytes[rd.Intn(len(charBytes))]
+	}
+	r.ID = string(b)
+}
+
+func (r *Relationship) validate(sourceURI string) error {
 	if strings.TrimSpace(r.ID) == "" {
-		return errors.New("OPC: relationship identifier cannot be empty string or a string with just spaces")
+		return newErrorRelationship(126, sourceURI, r.ID)
 	}
-	if strings.TrimSpace(r.RelType) == "" {
-		return errors.New("OPC: relationship type cannot be empty string or a string with just spaces")
+	if strings.TrimSpace(r.Type) == "" {
+		return newErrorRelationship(127, sourceURI, r.ID)
 	}
-	return validateRelationshipTarget(r.sourceURI, r.TargetURI, r.TargetMode)
+	return r.validateRelationshipTarget(sourceURI)
 }
 
 func (r *Relationship) toXML() *relationshipXML {
@@ -80,7 +76,7 @@ func (r *Relationship) toXML() *relationshipXML {
 	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
-	x := &relationshipXML{ID: r.ID, RelType: r.RelType, TargetURI: r.TargetURI, Mode: targetMode}
+	x := &relationshipXML{ID: r.ID, RelType: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
 	if r.TargetMode == ModeInternal {
 		if !strings.HasPrefix(x.TargetURI, "/") && !strings.HasPrefix(x.TargetURI, "\\") && !strings.HasPrefix(x.TargetURI, ".") {
 			x.TargetURI = "/" + x.TargetURI
@@ -116,53 +112,41 @@ func isRelationshipURI(uri string) bool {
 }
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
-func validateRelationshipTarget(sourceURI, targetURI string, targetMode TargetMode) error {
-	// ISO/IEC 29500-2 M1.28
-	uri, err := url.Parse(strings.TrimSpace(targetURI))
+func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
+	uri, err := url.Parse(strings.TrimSpace(r.TargetURI))
 	if err != nil || uri.String() == "" {
-		return errors.New("OPC: relationship target URI reference shall be a URI or a relative reference")
+		return newErrorRelationship(128, sourceURI, r.ID)
 	}
 
 	// ISO/IEC 29500-2 M1.29
-	if targetMode == ModeInternal && uri.IsAbs() {
-		return errors.New("OPC: relationship target URI must be relative if the TargetMode is Internal")
+	if r.TargetMode == ModeInternal && uri.IsAbs() {
+		return newErrorRelationship(129, sourceURI, r.ID)
 	}
 
-	var result error
-	if targetMode != ModeExternal && !uri.IsAbs() {
+	if r.TargetMode != ModeExternal && !uri.IsAbs() {
 		source, err := url.Parse(strings.TrimSpace(sourceURI))
-		if err != nil || source.String() == "" {
-			// ISO/IEC 29500-2 M1.28
-			result = errors.New("OPC: relationship source URI reference shall be a URI or a relative reference")
-		} else if isRelationshipURI(source.ResolveReference(uri).String()) {
-			// ISO/IEC 29500-2 M1.26
-			result = errors.New("OPC: The relationships part shall not have relationships to any other part")
+		if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
+			return newErrorRelationship(125, sourceURI, r.ID)
 		}
 	}
 
-	return result
+	return nil
 }
 
-func validateRelationships(rs []*Relationship) error {
+func validateRelationships(sourceURI string, rs []*Relationship) error {
 	var s struct{}
 	ids := make(map[string]struct{}, 0)
 	for _, r := range rs {
-		if err := r.validate(); err != nil {
+		if err := r.validate(sourceURI); err != nil {
 			return err
 		}
 		// ISO/IEC 29500-2 M1.26
 		if _, ok := ids[r.ID]; ok {
-			return errors.New("OPC: reltionship ID shall be unique within the Relationships part")
+			return newErrorRelationship(126, sourceURI, r.ID)
 		}
 		ids[r.ID] = s
 	}
 	return nil
-}
-
-func uniqueRelationshipID() string {
-	b := make([]byte, 8)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
 }
 
 func encodeRelationships(w io.Writer, rs []*Relationship) error {
@@ -184,7 +168,7 @@ func decodeRelationships(r io.Reader) ([]*Relationship, error) {
 
 		// Add SourceURI --> path (?)
 
-		rel[i] = &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, RelType: rl.RelType}
+		rel[i] = &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, Type: rl.RelType}
 		if rl.Mode == "" {
 			rel[i].TargetMode = ModeInternal
 		} else {

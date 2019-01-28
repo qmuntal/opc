@@ -1,53 +1,17 @@
 package gopc
 
 import (
-	"errors"
 	"mime"
 	"net/url"
 	"strings"
 )
 
-// CompressionOption is an enumerable for the different compression options.
-type CompressionOption int
-
-const (
-	// CompressionNone disables the compression.
-	CompressionNone CompressionOption = iota - 1
-	// CompressionNormal is optimized for a reasonable compromise between size and performance.
-	CompressionNormal
-	// CompressionMaximum is optimized for size.
-	CompressionMaximum
-	// CompressionFast is optimized for performance.
-	CompressionFast
-	// CompressionSuperFast is optimized for super performance.
-	CompressionSuperFast
-)
-
 // A Part is a stream of bytes defined in ISO/IEC 29500-2 §9.1..
 // Parts are analogous to a file in a file system or to a resource on an HTTP server.
-// The part properties will be validated before writing or reading from disk.
 type Part struct {
 	Name          string          // The name of the part.
 	ContentType   string          // The type of content stored in the part.
-	Relationships []*Relationship // The relationships associated to the part.
-}
-
-// CreateRelationship adds a new relationship to the Relationships slice.
-// The ID can be an empty string, if so a unique ID will be generated.
-// The input properties are not validated.
-func (p *Part) CreateRelationship(id, targetURI, relType string, targetMode TargetMode) *Relationship {
-	if id == "" {
-		id = uniqueRelationshipID()
-	}
-	r := &Relationship{
-		ID:         id,
-		RelType:    relType,
-		TargetURI:  targetURI,
-		TargetMode: targetMode,
-		sourceURI:  p.Name,
-	}
-	p.Relationships = append(p.Relationships, r)
-	return r
+	Relationships []*Relationship // The relationships associated to the part. Can be modified until the Writer is closed.
 }
 
 func (p *Part) validate() error {
@@ -55,7 +19,11 @@ func (p *Part) validate() error {
 		return err
 	}
 
-	return validateContentType(p.ContentType)
+	if err := p.validateContentType(); err != nil {
+		return err
+	}
+
+	return validateRelationships(p.Name, p.Relationships)
 }
 
 var defaultRef, _ = url.Parse("http://defaultcontainer/")
@@ -78,52 +46,44 @@ func NormalizePartName(name string) string {
 
 	normalized := strings.Replace(name, "\\", "/", -1)
 	normalized = strings.Replace(normalized, "//", "/", -1)
+	normalized = strings.Replace(normalized, "%2e", ".", -1)
 	if strings.HasSuffix(normalized, "/") {
 		normalized = normalized[:len(normalized)-1]
 	}
 
 	encodedURL, err := url.Parse(normalized)
-	if err != nil {
-		return name
-	}
-
-	if encodedURL.IsAbs() {
+	if err != nil || encodedURL.IsAbs() {
 		return name
 	}
 
 	// Normalize url, decode unnecessary escapes and encode necessary
-	p, _ := url.Parse(defaultRef.ResolveReference(encodedURL).Path)
+	p, err := url.Parse(defaultRef.ResolveReference(encodedURL).Path)
+	if err != nil {
+		return name
+	}
 	return p.EscapedPath()
 }
 
-func validateContentType(contentType string) error {
-	if len(contentType) == 0 {
-		return nil
+func (p *Part) validateContentType() error {
+	if strings.TrimSpace(p.ContentType) == "" {
+		return newError(102, p.Name)
 	}
 
-	// ISO/IEC 29500-2 M1.14
-	if contentType[0] == ' ' || strings.HasSuffix(contentType, " ") {
-		return errors.New("OPC: a content type also shall not have linear, leading or trailing white space")
-	}
-
-	// ISO/IEC 29500-2 M1.13 and M1.14
-	t, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return err
+	if p.ContentType[0] == ' ' || strings.HasSuffix(p.ContentType, " ") {
+		return newError(114, p.Name)
 	}
 
 	// mime package accepts Content-Disposition, which does not start with slash
-	if !strings.Contains(t, "/") {
-		return errors.New("OPC: expected slash in content type")
+	if t, _, err := mime.ParseMediaType(p.ContentType); err != nil || !strings.Contains(t, "/") {
+		return newError(113, p.Name)
 	}
 
 	return nil
 }
 
 func validatePartName(name string) error {
-	// ISO/IEC 29500-2 M1.1
 	if strings.TrimSpace(name) == "" {
-		return errors.New("OPC: a part name shall not be empty")
+		return newError(101, name)
 	}
 
 	if err := validateChars(name); err != nil {
@@ -143,53 +103,45 @@ func validateURL(name string) error {
 		return err
 	}
 
-	// ISO/IEC 29500-2 M1.4
 	if name[0] != '/' || encodedURL.IsAbs() {
-		return errors.New("OPC: a part name shall start with a forward slash character")
+		return newError(104, name)
 	}
 
-	// ISO/IEC 29500-2 M1.6
 	if name != encodedURL.EscapedPath() {
-		return errors.New("OPC: a segment shall not hold any characters other than pchar characters")
+		return newError(106, name)
 	}
 	return nil
 }
 
 func validateChars(name string) error {
-	// ISO/IEC 29500-2 M1.5
 	if strings.HasSuffix(name, "/") {
-		return errors.New("OPC: a part name shall not have a forward slash as the last character")
+		return newError(105, name)
 	}
 
-	// ISO/IEC 29500-2 M1.9
 	if strings.HasSuffix(name, ".") {
-		return errors.New("OPC: a segment shall not end with a dot character")
+		return newError(109, name)
 	}
 
-	// ISO/IEC 29500-2 M1.3
 	if strings.Contains(name, "//") {
-		return errors.New("OPC: a part name shall not have empty segments")
+		return newError(103, name)
 	}
 	return nil
 }
 
 func validateSegments(name string) error {
-	// ISO/IEC 29500-2 M1.10
 	if strings.Contains(name, "/./") || strings.Contains(name, "/../") {
-		return errors.New("OPC: a segment shall include at least one non-dot character")
+		return newError(110, name)
 	}
 
 	u := strings.ToUpper(name)
-	// ISO/IEC 29500-2 M1.7
 	// "/" "\"
 	if strings.Contains(u, "%5C") || strings.Contains(u, "%2F") {
-		return errors.New("OPC: a segment shall not contain percent-encoded forward slash or backward slash characters")
+		return newError(107, name)
 	}
 
-	// ISO/IEC 29500-2 M1.8
 	// "-" "." "_" "~"
 	if strings.Contains(u, "%2D") || strings.Contains(u, "%2E") || strings.Contains(u, "%5F") || strings.Contains(u, "%7E") {
-		return errors.New("OPC: a segment shall not contain percent-encoded unreserved characters")
+		return newError(108, name)
 	}
 	return nil
 }

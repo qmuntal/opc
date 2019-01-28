@@ -17,44 +17,52 @@ import (
 	"strings"
 )
 
-// A Package is a container that holds a collection of parts. The purpose of the package is to aggregate constituent
-// components of a document (or other type of content) into a single object.
-// The package is also capable of storing relationships between parts.
-// Defined in ISO/IEC 29500-2 §9.
-type Package struct {
+const (
+	corePropsRel            = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+	corePropsContentType    = "application/vnd.openxmlformats-package.core-properties+xml"
+	corePropsDefaultName    = "/props/core.xml"
+	contentTypesName        = "/[Content_Types].xml"
+	relationshipContentType = "application/vnd.openxmlformats-package.relationships+xml"
+	packageRelName          = "/_rels/.rels"
+)
+
+type pkg struct {
 	parts        map[string]*Part
 	contentTypes contentTypes
 }
 
-func newPackage() *Package {
-	return &Package{
+func newPackage() *pkg {
+	return &pkg{
 		parts: make(map[string]*Part, 0),
 	}
 }
 
-func (p *Package) add(part *Part) error {
+func (p *pkg) partExists(partName string) bool {
+	_, ok := p.parts[strings.ToUpper(partName)]
+	return ok
+}
+
+func (p *pkg) add(part *Part) error {
 	if err := part.validate(); err != nil {
 		return err
 	}
 	upperURI := strings.ToUpper(part.Name)
-	// ISO/IEC 29500-2 M1.12
-	if _, ok := p.parts[upperURI]; ok {
-		return errors.New("OPC: packages shall not contain equivalent part names")
+	if p.partExists(upperURI) {
+		return newError(112, part.Name)
 	}
-	// ISO/IEC 29500-2 M1.11
 	if p.checkPrefixCollision(upperURI) {
-		return errors.New("OPC: a package shall not contain a part with a part name derived from another part name by appending segments to it")
+		return newError(111, part.Name)
 	}
 	p.contentTypes.add(part.Name, part.ContentType)
 	p.parts[upperURI] = part
 	return nil
 }
 
-func (p *Package) deletePart(uri string) {
+func (p *pkg) deletePart(uri string) {
 	delete(p.parts, strings.ToUpper(uri))
 }
 
-func (p *Package) checkPrefixCollision(uri string) bool {
+func (p *pkg) checkPrefixCollision(uri string) bool {
 	keys := make([]string, len(p.parts)+1)
 	keys[0] = uri
 	i := 1
@@ -77,12 +85,12 @@ func (p *Package) checkPrefixCollision(uri string) bool {
 	return false
 }
 
-func (p *Package) encodeContentTypes(w io.Writer) error {
+func (p *pkg) encodeContentTypes(w io.Writer) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	return xml.NewEncoder(w).Encode(p.contentTypes.toXML())
 }
 
-func (p *Package) checkStringsPrefixCollision(s1, s2 string) bool {
+func (p *pkg) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
@@ -139,9 +147,6 @@ func (c *contentTypes) ensureOverridesMap() {
 // Add needs a valid content type, else the behaviour is undefined
 func (c *contentTypes) add(partName, contentType string) error {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.3
-	if len(contentType) == 0 {
-		return nil
-	}
 	t, params, _ := mime.ParseMediaType(contentType)
 	contentType = mime.FormatMediaType(t, params)
 
@@ -247,4 +252,61 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 		}
 	}
 	return ct, nil
+}
+
+type corePropertiesXML struct {
+	XMLName        xml.Name `xml:"coreProperties"`
+	XML            string   `xml:"xmlns,attr"`
+	XMLDCTERMS     string   `xml:"xmlns:dcterms,attr"`
+	XMLDC          string   `xml:"xmlns:dc,attr"`
+	Category       string   `xml:"category,omitempty"`
+	ContentStatus  string   `xml:"contentStatus,omitempty"`
+	Created        string   `xml:"dcterms:created,omitempty"`
+	Creator        string   `xml:"dc:creator,omitempty"`
+	Description    string   `xml:"dc:description,omitempty"`
+	Identifier     string   `xml:"dc:identifier,omitempty"`
+	Keywords       string   `xml:"keywords,omitempty"`
+	Language       string   `xml:"dc:language,omitempty"`
+	LastModifiedBy string   `xml:"lastModifiedBy,omitempty"`
+	LastPrinted    string   `xml:"lastPrinted,omitempty"`
+	Modified       string   `xml:"dcterms:modified,omitempty"`
+	Revision       string   `xml:"revision,omitempty"`
+	Subject        string   `xml:"dc:subject,omitempty"`
+	Title          string   `xml:"dc:title,omitempty"`
+	Version        string   `xml:"version,omitempty"`
+}
+
+// CoreProperties enable users to get and set well-known and common sets of property metadata within packages.
+type CoreProperties struct {
+	PartName       string // Won't be writed to the package, only used to indicate the location of the CoreProperties part. If empty the default location is "/props/core.xml".
+	Category       string // A categorization of the content of this package.
+	ContentStatus  string // The status of the content.
+	Created        string // Date of creation of the resource.
+	Creator        string // An entity primarily responsible for making the content of the resource.
+	Description    string // An explanation of the content of the resource.
+	Identifier     string // An unambiguous reference to the resource within a given context.
+	Keywords       string // A delimited set of keywords to support searching and indexing.
+	Language       string // The language of the intellectual content of the resource.
+	LastModifiedBy string // The user who performed the last modification.
+	LastPrinted    string // The date and time of the last printing.
+	Modified       string // Date on which the resource was changed.
+	Revision       string // The revision number.
+	Subject        string // The topic of the content of the resource.
+	Title          string // The name given to the resource.
+	Version        string // The version number.
+}
+
+func (c *CoreProperties) encode(w io.Writer) error {
+	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
+	return xml.NewEncoder(w).Encode(&corePropertiesXML{
+		xml.Name{Local: "coreProperties"},
+		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+		"http://purl.org/dc/terms/",
+		"http://purl.org/dc/elements/1.1/",
+		c.Category, c.ContentStatus, c.Created,
+		c.Creator, c.Description, c.Identifier,
+		c.Keywords, c.Language, c.LastModifiedBy,
+		c.LastPrinted, c.Modified, c.Revision,
+		c.Subject, c.Title, c.Version,
+	})
 }
