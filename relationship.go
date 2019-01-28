@@ -51,6 +51,12 @@ type Relationship struct {
 	sourceURI  string
 }
 
+type relationshipsXML struct {
+	XMLName xml.Name           `xml:"Relationships"`
+	XML     string             `xml:"xmlns,attr"`
+	RelsXML []*relationshipXML `xml:"Relationship"`
+}
+
 type relationshipXML struct {
 	ID        string `xml:"Id,attr"`
 	RelType   string `xml:"Type,attr"`
@@ -91,6 +97,10 @@ func isRelationshipURI(uri string) bool {
 	}
 
 	if strings.EqualFold(up, "/_RELS/.RELS") {
+		return true
+	}
+
+	if strings.EqualFold(up, "_rels/.rels") {
 		return true
 	}
 
@@ -155,12 +165,6 @@ func uniqueRelationshipID() string {
 	return fmt.Sprintf("%x", b)
 }
 
-type relationshipsXML struct {
-	XMLName xml.Name           `xml:"Relationships"`
-	XML     string             `xml:"xmlns,attr"`
-	RelsXML []*relationshipXML `xml:"Relationship"`
-}
-
 func encodeRelationships(w io.Writer, rs []*Relationship) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
@@ -168,4 +172,45 @@ func encodeRelationships(w io.Writer, rs []*Relationship) error {
 		re.RelsXML = append(re.RelsXML, r.toXML())
 	}
 	return xml.NewEncoder(w).Encode(re)
+}
+
+func decodeRelationships(r io.Reader) ([]*Relationship, error) {
+	relDecode := new(relationshipsXML)
+	if err := xml.NewDecoder(r).Decode(relDecode); err != nil {
+		return nil, err
+	}
+	rel := make([]*Relationship, len(relDecode.RelsXML))
+	for i, rl := range relDecode.RelsXML {
+
+		// Add SourceURI --> path (?)
+
+		rel[i] = &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, RelType: rl.RelType}
+		if rl.Mode == "" {
+			rel[i].TargetMode = ModeInternal
+		} else {
+			rel[i].TargetMode = ModeExternal
+		}
+	}
+	return rel, nil
+}
+
+type relationshipsPart struct {
+	relation map[string][]*Relationship // partname:relationship
+}
+
+func (rp *relationshipsPart) findRelationship(name string) []*Relationship {
+	if rp.relation == nil {
+		rp.relation = make(map[string][]*Relationship)
+	}
+	if rel, ok := rp.relation[name]; ok {
+		return rel
+	}
+	return nil
+}
+
+func (rp *relationshipsPart) addRelationship(name string, r []*Relationship) {
+	if rp.relation == nil {
+		rp.relation = make(map[string][]*Relationship)
+	}
+	rp.relation[name] = r
 }

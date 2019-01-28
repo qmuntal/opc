@@ -3,6 +3,8 @@ package gopc
 import (
 	"errors"
 	"io"
+	"path/filepath"
+	"strings"
 )
 
 type archiveFile interface {
@@ -46,23 +48,26 @@ func (r *Reader) loadPackage() error {
 	if err != nil {
 		return err
 	}
+	rels, err := r.loadRelationships()
+	if err != nil {
+		return err
+	}
 	for _, file := range files {
-		if file.Name() == "[Content_Types].xml" {
+		fileName := file.Name()
+		if fileName == "[Content_Types].xml" || isRelationshipURI(fileName) {
 			continue
 		}
-		n := "/" + file.Name()
-		cType, err := ct.findType(n)
+		name := "/" + fileName
+		cType, err := ct.findType(name)
 		if err != nil {
 			return err
 		}
-		part := &Part{Name: n, ContentType: cType}
+		part := &Part{Name: name, ContentType: cType, Relationships: rels.findRelationship(name)}
 		r.p.add(part)
 	}
 	r.p.contentTypes = *ct
 	return nil
 }
-
-//isRelationshipURI(uri string) bool
 
 func (r *Reader) loadContentType() (*contentTypes, error) {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
@@ -77,5 +82,32 @@ func (r *Reader) loadContentType() (*contentTypes, error) {
 		}
 		return decodeContentTypes(reader)
 	}
+	// ISO/IEC 29500-2 M2.4
 	return nil, errors.New("OPC: the file content type must exist in the package")
+}
+
+func (r *Reader) loadRelationships() (*relationshipsPart, error) {
+	files := r.r.Files()
+	rels := new(relationshipsPart)
+	for _, file := range files {
+		name := file.Name()
+		if !isRelationshipURI(name) {
+			continue
+		}
+		reader, err := file.Open()
+		if err != nil {
+			return nil, err
+		}
+		rls, err := decodeRelationships(reader)
+		if err != nil {
+			return nil, err
+		}
+		ext := filepath.Ext(name)
+		pname2 := filepath.Base(name)
+		path := filepath.Dir(filepath.Dir(name))
+		path = strings.Replace(path, `\`, "/", -1)
+		pname := "/" + path + "/" + strings.TrimSuffix(pname2, ext)
+		rels.addRelationship(pname, rls)
+	}
+	return rels, nil
 }
