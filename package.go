@@ -9,7 +9,6 @@ package gopc
 
 import (
 	"encoding/xml"
-	"errors"
 	"io"
 	"mime"
 	"path/filepath"
@@ -191,8 +190,7 @@ func (c *contentTypes) findType(name string) (string, error) {
 			return t, nil
 		}
 	}
-	// ISO/IEC 29500-2 M2.8
-	return "", errors.New("OPC: A part shall have a content type")
+	return "", newError(208, name)
 }
 
 type contentTypesXMLReader struct {
@@ -220,7 +218,7 @@ func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		}
 		m.Value = e
 	default:
-		return errors.New("OPC: content type has a element with an unexpected type")
+		return newError(204, "/")
 	}
 	return nil
 }
@@ -235,18 +233,15 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
 			ext := strings.ToLower(cDefault.Extension)
 			if ext == "" {
-				// ISO/IEC 29500-2 M2.6
-				return nil, errors.New("OPC: the package implementer shall require a non-empty extension in a Default element")
+				return nil, newError(206, "/")
 			}
 			if _, ok := ct.defaults[ext]; ok {
-				// ISO/IEC 29500-2 M2.5
-				return nil, errors.New("OPC: there must be only one Default content type for each extension")
+				return nil, newError(205, "/")
 			}
 			ct.addDefault(ext, cDefault.ContentType)
 		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
 			if _, ok := ct.overrides[cOverride.PartName]; ok {
-				// ISO/IEC 29500-2 M2.5
-				return nil, errors.New("OPC: there must be only one Override content type for a Part Name")
+				return nil, newError(205, cOverride.PartName)
 			}
 			ct.addOverride(cOverride.PartName, cOverride.ContentType)
 		}

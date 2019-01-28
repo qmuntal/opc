@@ -1,7 +1,6 @@
 package gopc
 
 import (
-	"errors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -82,8 +81,7 @@ func (r *Reader) loadContentType() (*contentTypes, error) {
 		}
 		return decodeContentTypes(reader)
 	}
-	// ISO/IEC 29500-2 M2.4
-	return nil, errors.New("OPC: the file content type must exist in the package")
+	return nil, newError(310, "/")
 }
 
 func (r *Reader) loadRelationships() (*relationshipsPart, error) {
