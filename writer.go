@@ -30,7 +30,7 @@ const (
 // Writer implements a OPC file writer.
 type Writer struct {
 	Properties    CoreProperties  // Package metadata. Can be modified until the Writer is closed.
-	Relationships []*Relationship // RThe relationships associated to the package. Can be modified until the Writer is closed.
+	Relationships []*Relationship // The relationships associated to the package. Can be modified until the Writer is closed.
 	p             *pkg
 	w             *zip.Writer
 	last          *Part

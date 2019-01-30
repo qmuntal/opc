@@ -17,9 +17,11 @@ type archive interface {
 
 // Reader implements a OPC file reader.
 type Reader struct {
-	Parts []*Part
-	p     *pkg
-	r     archive
+	Parts         []*Part
+	Relationships []*Relationship
+	Properties    CoreProperties
+	p             *pkg
+	r             archive
 }
 
 // NewReader returns a new Reader reading an OPC file to r.
@@ -42,70 +44,125 @@ func newReader(a archive) (*Reader, error) {
 
 func (r *Reader) loadPackage() error {
 	files := r.r.Files()
-	r.Parts = make([]*Part, len(files)-1) // -1 is for [Content_Types].xml
-	ct, err := r.loadContentType()
+	ct, rels, err := r.loadPartPropierties()
 	if err != nil {
 		return err
 	}
-	rels, err := r.loadRelationships()
-	if err != nil {
-		return err
-	}
+	r.Parts = make([]*Part, 0, len(files)-1) // -1 is for [Content_Types].xml
 	for _, file := range files {
-		fileName := file.Name()
-		if fileName == "[Content_Types].xml" || isRelationshipURI(fileName) {
+		fileName := "/" + file.Name()
+		// skip content types part, relationship parts and directories
+		if fileName == contentTypesName || isRelationshipURI(fileName) || strings.HasSuffix(fileName, "/") {
 			continue
 		}
-		name := "/" + fileName
-		cType, err := ct.findType(name)
+		if fileName == r.Properties.PartName {
+			cp, err := r.loadCoreProperties(file)
+			if err != nil {
+				return err
+			}
+			r.Properties = *cp
+			continue
+		}
+		cType, err := ct.findType(fileName)
 		if err != nil {
 			return err
 		}
-		part := &Part{Name: name, ContentType: cType, Relationships: rels.findRelationship(name)}
+		part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
+		r.Parts = append(r.Parts, part)
 		r.p.add(part)
 	}
 	r.p.contentTypes = *ct
 	return nil
 }
 
-func (r *Reader) loadContentType() (*contentTypes, error) {
-	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
-	files := r.r.Files()
-	for _, file := range files {
-		if file.Name() != "[Content_Types].xml" {
-			continue
-		}
-		reader, err := file.Open()
-		if err != nil {
-			return nil, err
-		}
-		return decodeContentTypes(reader)
-	}
-	return nil, newError(310, "/")
-}
-
-func (r *Reader) loadRelationships() (*relationshipsPart, error) {
-	files := r.r.Files()
+func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error) {
+	ct := new(contentTypes)
 	rels := new(relationshipsPart)
+	var err error
+	foundCT := false
+	files := r.r.Files()
 	for _, file := range files {
 		name := file.Name()
+		if name == "[Content_Types].xml" {
+			ct, err = r.loadContentType(file)
+			if err != nil {
+				return nil, nil, err
+			}
+			foundCT = true
+			continue
+		}
+		name = "/" + name
 		if !isRelationshipURI(name) {
 			continue
 		}
-		reader, err := file.Open()
-		if err != nil {
-			return nil, err
+		if name == packageRelName {
+			err = r.loadPackageRelationships(file)
+			if err != nil {
+				return nil, nil, err
+			}
+			continue
 		}
-		rls, err := decodeRelationships(reader)
+
+		rls, pname, err := loadRelationships(file)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		ext := filepath.Ext(name)
-		pname2 := filepath.Base(name)
-		path := filepath.Dir(filepath.Dir(name))
-		path = strings.Replace(path, `\`, "/", -1)
-		pname := "/" + path + "/" + strings.TrimSuffix(pname2, ext)
+
 		rels.addRelationship(pname, rls)
 	}
-	return rels, nil
+	if !foundCT {
+		return nil, nil, newError(310, "/")
+	}
+	return ct, rels, nil
+}
+
+func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
+	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
+	reader, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	return decodeContentTypes(reader)
+}
+
+func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
+	reader, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	return decodeCoreProperties(reader)
+}
+
+func loadRelationships(file archiveFile) ([]*Relationship, string, error) {
+	reader, err := file.Open()
+	if err != nil {
+		return nil, "", err
+	}
+	rls, err := decodeRelationships(reader)
+	if err != nil {
+		return nil, "", err
+	}
+	ext := filepath.Ext(file.Name())
+	pname2 := filepath.Base(file.Name())
+	path := strings.Replace(filepath.Dir(filepath.Dir(file.Name())), `\`, "/", -1)
+	pname := "/" + path + "/" + strings.TrimSuffix(pname2, ext)
+	return rls, pname, nil
+}
+
+func (r *Reader) loadPackageRelationships(file archiveFile) error {
+	reader, err := file.Open()
+	if err != nil {
+		return err
+	}
+	rls, err := decodeRelationships(reader)
+	if err != nil {
+		return err
+	}
+	r.Relationships = rls
+	for _, rel := range rls {
+		if rel.Type == corePropsRel {
+			r.Properties.PartName = rel.TargetURI
+		}
+	}
+	return nil
 }

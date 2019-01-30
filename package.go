@@ -249,7 +249,7 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 	return ct, nil
 }
 
-type corePropertiesXML struct {
+type corePropertiesXMLMarshal struct {
 	XMLName        xml.Name `xml:"coreProperties"`
 	XML            string   `xml:"xmlns,attr"`
 	XMLDCTERMS     string   `xml:"xmlns:dcterms,attr"`
@@ -268,6 +268,28 @@ type corePropertiesXML struct {
 	Revision       string   `xml:"revision,omitempty"`
 	Subject        string   `xml:"dc:subject,omitempty"`
 	Title          string   `xml:"dc:title,omitempty"`
+	Version        string   `xml:"version,omitempty"`
+}
+
+type corePropertiesXMLUnmarshal struct {
+	XMLName        xml.Name `xml:"coreProperties"`
+	XML            string   `xml:"xmlns,attr"`
+	XMLDCTERMS     string   `xml:"dcterms,attr"`
+	XMLDC          string   `xml:"dc,attr"`
+	Category       string   `xml:"category,omitempty"`
+	ContentStatus  string   `xml:"contentStatus,omitempty"`
+	Created        string   `xml:"created,omitempty"`
+	Creator        string   `xml:"creator,omitempty"`
+	Description    string   `xml:"description,omitempty"`
+	Identifier     string   `xml:"identifier,omitempty"`
+	Keywords       string   `xml:"keywords,omitempty"`
+	Language       string   `xml:"language,omitempty"`
+	LastModifiedBy string   `xml:"lastModifiedBy,omitempty"`
+	LastPrinted    string   `xml:"lastPrinted,omitempty"`
+	Modified       string   `xml:"modified,omitempty"`
+	Revision       string   `xml:"revision,omitempty"`
+	Subject        string   `xml:"subject,omitempty"`
+	Title          string   `xml:"title,omitempty"`
 	Version        string   `xml:"version,omitempty"`
 }
 
@@ -293,7 +315,7 @@ type CoreProperties struct {
 
 func (c *CoreProperties) encode(w io.Writer) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
-	return xml.NewEncoder(w).Encode(&corePropertiesXML{
+	return xml.NewEncoder(w).Encode(&corePropertiesXMLMarshal{
 		xml.Name{Local: "coreProperties"},
 		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
 		"http://purl.org/dc/terms/",
@@ -304,4 +326,18 @@ func (c *CoreProperties) encode(w io.Writer) error {
 		c.LastPrinted, c.Modified, c.Revision,
 		c.Subject, c.Title, c.Version,
 	})
+}
+
+func decodeCoreProperties(r io.Reader) (*CoreProperties, error) {
+	propDecode := new(corePropertiesXMLUnmarshal)
+	if err := xml.NewDecoder(r).Decode(propDecode); err != nil {
+		return nil, err
+	}
+	prop := &CoreProperties{Category: propDecode.Category, ContentStatus: propDecode.ContentStatus,
+		Created: propDecode.Created, Creator: propDecode.Creator, Description: propDecode.Description,
+		Identifier: propDecode.Identifier, Keywords: propDecode.Keywords, Language: propDecode.Language,
+		LastModifiedBy: propDecode.LastModifiedBy, LastPrinted: propDecode.LastPrinted, Modified: propDecode.Modified,
+		Revision: propDecode.Revision, Subject: propDecode.Subject, Title: propDecode.Title, Version: propDecode.Version}
+
+	return prop, nil
 }

@@ -57,7 +57,6 @@ var validRelationships = `<?xml version="1.0" encoding="UTF-8"?>
 </Relationships>`
 
 func Test_newReader(t *testing.T) {
-
 	p1 := newPackage()
 	p1.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
 	p1.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
@@ -85,6 +84,13 @@ func Test_newReader(t *testing.T) {
 		p       *pkg
 		wantErr bool
 	}{
+		{"baseWithFolders", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("3D/", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, p1, false},
 		{"baseWithRels", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/_rels/app.xml.rels", ioutil.NopCloser(bytes.NewBufferString(validRelationships)), nil),
@@ -234,8 +240,7 @@ var relationship2 = `<?xml version="1.0" encoding="UTF-8"?>
 <Relationship Id="rel-5" Type="exampleRelationType" Target="/"/>
 </Relationships>`
 
-func Test_newReader_Relationships(t *testing.T) {
-
+func Test_newReader_PartRelationships(t *testing.T) {
 	p3 := newPackage()
 	p3.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
@@ -275,6 +280,7 @@ func Test_newReader_Relationships(t *testing.T) {
 		p       *pkg
 		wantErr bool
 	}{
+
 		{"complexRelationships", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(generalRelationships)), nil),
@@ -317,6 +323,111 @@ func Test_newReader_Relationships(t *testing.T) {
 			}
 			if !tt.wantErr && !reflect.DeepEqual(got.p, tt.p) {
 				t.Errorf("newReader() = %v, want %v", got, tt.p)
+			}
+		})
+	}
+}
+
+var packageRelationships = `<?xml version="1.0" encoding="UTF-8" standalone="true"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Target="docProps/app.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Id="rId3"/>
+<Relationship Target="docProps/core.xml" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Id="rId2"/>
+<Relationship Target="xl/workbook.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Id="rId1"/>
+</Relationships>`
+
+var packageContentTypesWithCore = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
+<Override ContentType="application/vnd.openxmlformats-package.core-properties+xml" PartName="/docProps/core.xml"/>
+</Types>`
+
+var coreFile = `<?xml version="1.0" encoding="UTF-8" standalone="true"?>
+<cp:coreProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">
+<dc:creator/>
+<cp:lastModifiedBy/>
+<dcterms:created xsi:type="dcterms:W3CDTF">2015-06-05T18:19:34Z</dcterms:created>
+<dcterms:modified xsi:type="dcterms:W3CDTF">2019-01-24T19:58:26Z</dcterms:modified>
+</cp:coreProperties>`
+
+var coreFileDecodeError = `<?xml version="1.0" encoding="UTF-8" standalone="true"?>
+<cp:coreProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">
+<dc:creator/>
+<cp:lastModifiedBy/>
+<dcterms:created xsi:type="dcterms:W3CDTF">2015-06-05T18:19:34Z</dcterms:created>
+<dcterms:modified xsi:type="dcterms:W3CDTF">2019-01-24T19:58:26Z</dcterms:modified>`
+
+func Test_newReader_CoreProperties(t *testing.T) {
+	cp := &CoreProperties{Created: "2015-06-05T18:19:34Z", Modified: "2019-01-24T19:58:26Z"}
+
+	tests := []struct {
+		name    string
+		files   []archiveFile
+		prop    CoreProperties
+		wantErr bool
+	}{
+		{"base", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(packageContentTypesWithCore)), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(packageRelationships)), nil),
+			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString(coreFile)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, *cp, false},
+		{"decodeError", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(packageContentTypesWithCore)), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(packageRelationships)), nil),
+			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString(coreFileDecodeError)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, *cp, true},
+		{"openError", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(packageContentTypesWithCore)), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(packageRelationships)), nil),
+			newMockFile("docProps/core.xml", ioutil.NopCloser(nil), errors.New("")),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, *cp, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := new(mockArchive)
+			a.On("Files").Return(tt.files)
+			got, err := newReader(a)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got.Properties, tt.prop) {
+				t.Errorf("newReader() = %v, want %v", got.Properties, tt.prop)
+			}
+		})
+	}
+}
+
+func Test_newReader_PackageRelationships(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		files   []archiveFile
+		wantErr bool
+	}{
+
+		{"openErrorPackage", []archiveFile{
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(nil), errors.New("")),
+		}, true},
+
+		{"decodeErrorPackage", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString("relations")), nil),
+		}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := new(mockArchive)
+			a.On("Files").Return(tt.files)
+			_, err := newReader(a)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 		})
 	}

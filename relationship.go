@@ -71,17 +71,21 @@ func (r *Relationship) validate(sourceURI string) error {
 	return r.validateRelationshipTarget(sourceURI)
 }
 
+func (r *Relationship) normalizeTargetURI() {
+	if r.TargetMode == ModeInternal {
+		if !strings.HasPrefix(r.TargetURI, "/") && !strings.HasPrefix(r.TargetURI, "\\") && !strings.HasPrefix(r.TargetURI, ".") {
+			r.TargetURI = "/" + r.TargetURI
+		}
+	}
+}
+
 func (r *Relationship) toXML() *relationshipXML {
 	var targetMode string
 	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
+	r.normalizeTargetURI()
 	x := &relationshipXML{ID: r.ID, RelType: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
-	if r.TargetMode == ModeInternal {
-		if !strings.HasPrefix(x.TargetURI, "/") && !strings.HasPrefix(x.TargetURI, "\\") && !strings.HasPrefix(x.TargetURI, ".") {
-			x.TargetURI = "/" + x.TargetURI
-		}
-	}
 	return x
 }
 
@@ -93,10 +97,6 @@ func isRelationshipURI(uri string) bool {
 	}
 
 	if strings.EqualFold(up, "/_RELS/.RELS") {
-		return true
-	}
-
-	if strings.EqualFold(up, "_rels/.rels") {
 		return true
 	}
 
@@ -165,15 +165,14 @@ func decodeRelationships(r io.Reader) ([]*Relationship, error) {
 	}
 	rel := make([]*Relationship, len(relDecode.RelsXML))
 	for i, rl := range relDecode.RelsXML {
-
-		// Add SourceURI --> path (?)
-
-		rel[i] = &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, Type: rl.RelType}
+		newRel := &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, Type: rl.RelType}
 		if rl.Mode == "" {
-			rel[i].TargetMode = ModeInternal
+			newRel.TargetMode = ModeInternal
 		} else {
-			rel[i].TargetMode = ModeExternal
+			newRel.TargetMode = ModeExternal
 		}
+		newRel.normalizeTargetURI()
+		rel[i] = newRel
 	}
 	return rel, nil
 }
