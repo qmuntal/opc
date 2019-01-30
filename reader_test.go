@@ -362,7 +362,7 @@ func Test_newReader_CoreProperties(t *testing.T) {
 	tests := []struct {
 		name    string
 		files   []archiveFile
-		prop    CoreProperties
+		want    CoreProperties
 		wantErr bool
 	}{
 		{"base", []archiveFile{
@@ -393,41 +393,61 @@ func Test_newReader_CoreProperties(t *testing.T) {
 				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && !reflect.DeepEqual(got.Properties, tt.prop) {
-				t.Errorf("newReader() = %v, want %v", got.Properties, tt.prop)
+			if !tt.wantErr && !reflect.DeepEqual(got.Properties, tt.want) {
+				t.Errorf("newReader() = %v, want %v", got.Properties, tt.want)
 			}
 		})
 	}
 }
 
-func Test_newReader_PackageRelationships(t *testing.T) {
+var validPackageRelationships = `<?xml version="1.0" encoding="UTF-8" standalone="true"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Target="http://www.custom.com/images/pic1.jpg" Type="http://www.custom.com/external-resource" Id="rId3" TargetMode="External"/>
+<Relationship Target="docProps/app.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Id="rId2" TargetMode="Internal"/>
+<Relationship Target="xl/workbook.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Id="rId1"/>
+</Relationships>`
 
+func Test_newReader_PackageRelationships(t *testing.T) {
+	r := []*Relationship{
+		{ID: "rId3", Type: "http://www.custom.com/external-resource", TargetURI: "http://www.custom.com/images/pic1.jpg", TargetMode: ModeExternal},
+		{ID: "rId2", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", TargetURI: "/docProps/app.xml", TargetMode: ModeInternal},
+		{ID: "rId1", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", TargetURI: "/xl/workbook.xml", TargetMode: ModeInternal},
+	}
 	tests := []struct {
 		name    string
 		files   []archiveFile
+		want    []*Relationship
 		wantErr bool
 	}{
+		{"base", []archiveFile{
+			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(packageContentTypesWithCore)), nil),
+			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(validPackageRelationships)), nil),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, r, false},
 
 		{"openErrorPackage", []archiveFile{
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("_rels/.rels", ioutil.NopCloser(nil), errors.New("")),
-		}, true},
+		}, nil, true},
 
 		{"decodeErrorPackage", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString("relations")), nil),
-		}, true},
+		}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := new(mockArchive)
 			a.On("Files").Return(tt.files)
-			_, err := newReader(a)
+			got, err := newReader(a)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got.Relationships, tt.want) {
+				t.Errorf("newReader() = %v, want %v", got.Relationships, tt.want)
 			}
 		})
 	}

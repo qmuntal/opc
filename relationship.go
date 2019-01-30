@@ -166,7 +166,7 @@ func decodeRelationships(r io.Reader) ([]*Relationship, error) {
 	rel := make([]*Relationship, len(relDecode.RelsXML))
 	for i, rl := range relDecode.RelsXML {
 		newRel := &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, Type: rl.RelType}
-		if rl.Mode == "" {
+		if rl.Mode == "" || rl.Mode == "Internal" {
 			newRel.TargetMode = ModeInternal
 		} else {
 			newRel.TargetMode = ModeExternal

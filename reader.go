@@ -82,8 +82,8 @@ func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error
 	foundCT := false
 	files := r.r.Files()
 	for _, file := range files {
-		name := file.Name()
-		if name == "[Content_Types].xml" {
+		name := "/" + file.Name()
+		if name == contentTypesName {
 			ct, err = r.loadContentType(file)
 			if err != nil {
 				return nil, nil, err
@@ -91,7 +91,6 @@ func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error
 			foundCT = true
 			continue
 		}
-		name = "/" + name
 		if !isRelationshipURI(name) {
 			continue
 		}
