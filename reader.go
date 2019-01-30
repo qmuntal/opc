@@ -52,10 +52,10 @@ func (r *Reader) loadPackage() error {
 	for _, file := range files {
 		fileName := "/" + file.Name()
 		// skip content types part, relationship parts and directories
-		if fileName == contentTypesName || isRelationshipURI(fileName) || strings.HasSuffix(fileName, "/") {
+		if strings.EqualFold(fileName, contentTypesName) || isRelationshipURI(fileName) || strings.HasSuffix(fileName, "/") {
 			continue
 		}
-		if fileName == r.Properties.PartName {
+		if strings.EqualFold(fileName, r.Properties.PartName) {
 			cp, err := r.loadCoreProperties(file)
 			if err != nil {
 				return err
@@ -83,7 +83,7 @@ func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error
 	files := r.r.Files()
 	for _, file := range files {
 		name := "/" + file.Name()
-		if name == contentTypesName {
+		if strings.EqualFold(name, contentTypesName) {
 			ct, err = r.loadContentType(file)
 			if err != nil {
 				return nil, nil, err
@@ -94,7 +94,7 @@ func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error
 		if !isRelationshipURI(name) {
 			continue
 		}
-		if name == packageRelName {
+		if strings.EqualFold(name, packageRelName) {
 			err = r.loadPackageRelationships(file)
 			if err != nil {
 				return nil, nil, err
@@ -159,7 +159,7 @@ func (r *Reader) loadPackageRelationships(file archiveFile) error {
 	}
 	r.Relationships = rls
 	for _, rel := range rls {
-		if rel.Type == corePropsRel {
+		if strings.EqualFold(rel.Type, corePropsRel) {
 			r.Properties.PartName = rel.TargetURI
 		}
 	}

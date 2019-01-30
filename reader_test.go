@@ -45,7 +45,7 @@ func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
 
 var validContentTypes = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/>
+<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/APP.xml"/>
 <Default Extension="png" ContentType="image/png"/>
 <Default ContentType="application/xml" Extension="xml"/>
 </Types>`
@@ -302,7 +302,7 @@ func Test_newReader_PartRelationships(t *testing.T) {
 
 		{"openError", []archiveFile{
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
-			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
+			newMockFile("[COntent_Types].xml", ioutil.NopCloser(bytes.NewBufferString(validContentTypes)), nil),
 			newMockFile("docProps/_rels/app.xml.rels", ioutil.NopCloser(nil), errors.New("")),
 		}, nil, true},
 
@@ -367,7 +367,7 @@ func Test_newReader_CoreProperties(t *testing.T) {
 	}{
 		{"base", []archiveFile{
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(bytes.NewBufferString(packageContentTypesWithCore)), nil),
-			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(packageRelationships)), nil),
+			newMockFile("_RELS/.rels", ioutil.NopCloser(bytes.NewBufferString(packageRelationships)), nil),
 			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString(coreFile)), nil),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, *cp, false},
@@ -410,7 +410,7 @@ var validPackageRelationships = `<?xml version="1.0" encoding="UTF-8" standalone
 func Test_newReader_PackageRelationships(t *testing.T) {
 	r := []*Relationship{
 		{ID: "rId3", Type: "http://www.custom.com/external-resource", TargetURI: "http://www.custom.com/images/pic1.jpg", TargetMode: ModeExternal},
-		{ID: "rId2", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", TargetURI: "/docProps/app.xml", TargetMode: ModeInternal},
+		{ID: "rId2", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", TargetURI: "/DOCPROPS/app.xml", TargetMode: ModeInternal},
 		{ID: "rId1", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", TargetURI: "/xl/workbook.xml", TargetMode: ModeInternal},
 	}
 	tests := []struct {
