@@ -76,10 +76,9 @@ func (r *Reader) loadPackage() error {
 }
 
 func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error) {
-	ct := new(contentTypes)
+	var ct *contentTypes
 	rels := new(relationshipsPart)
 	var err error
-	foundCT := false
 	files := r.r.Files()
 	for _, file := range files {
 		name := "/" + file.Name()
@@ -88,28 +87,21 @@ func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error
 			if err != nil {
 				return nil, nil, err
 			}
-			foundCT = true
-			continue
-		}
-		if !isRelationshipURI(name) {
-			continue
-		}
-		if strings.EqualFold(name, packageRelName) {
-			err = r.loadPackageRelationships(file)
-			if err != nil {
-				return nil, nil, err
+		} else if isRelationshipURI(name) {
+			if strings.EqualFold(name, packageRelName) {
+				err = r.loadPackageRelationships(file)
+				if err != nil {
+					return nil, nil, err
+				}
+			} else {
+				err := loadRelationships(file, rels)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
-			continue
 		}
-
-		rls, pname, err := loadRelationships(file)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		rels.addRelationship(pname, rls)
 	}
-	if !foundCT {
+	if ct == nil {
 		return nil, nil, newError(310, "/")
 	}
 	return ct, rels, nil
@@ -132,20 +124,21 @@ func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
 	return decodeCoreProperties(reader)
 }
 
-func loadRelationships(file archiveFile) ([]*Relationship, string, error) {
+func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 	reader, err := file.Open()
 	if err != nil {
-		return nil, "", err
+		return err
 	}
 	rls, err := decodeRelationships(reader)
 	if err != nil {
-		return nil, "", err
+		return err
 	}
-	ext := filepath.Ext(file.Name())
-	pname2 := filepath.Base(file.Name())
+
+	// get part name from rels part
 	path := strings.Replace(filepath.Dir(filepath.Dir(file.Name())), `\`, "/", -1)
-	pname := "/" + path + "/" + strings.TrimSuffix(pname2, ext)
-	return rls, pname, nil
+	pname := "/" + path + "/" + strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
+	rels.addRelationship(pname, rls)
+	return nil
 }
 
 func (r *Reader) loadPackageRelationships(file archiveFile) error {

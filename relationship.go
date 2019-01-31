@@ -185,15 +185,12 @@ func (rp *relationshipsPart) findRelationship(name string) []*Relationship {
 	if rp.relation == nil {
 		rp.relation = make(map[string][]*Relationship)
 	}
-	if rel, ok := rp.relation[name]; ok {
-		return rel
-	}
-	return nil
+	return rp.relation[strings.ToUpper(name)]
 }
 
 func (rp *relationshipsPart) addRelationship(name string, r []*Relationship) {
 	if rp.relation == nil {
 		rp.relation = make(map[string][]*Relationship)
 	}
-	rp.relation[name] = r
+	rp.relation[strings.ToUpper(name)] = r
 }

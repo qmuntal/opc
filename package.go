@@ -181,7 +181,7 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 }
 
 func (c *contentTypes) findType(name string) (string, error) {
-	if t, ok := c.overrides[name]; ok {
+	if t, ok := c.overrides[strings.ToUpper(name)]; ok {
 		return t, nil
 	}
 	ext := filepath.Ext(name)
@@ -240,10 +240,11 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 			}
 			ct.addDefault(ext, cDefault.ContentType)
 		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
-			if _, ok := ct.overrides[cOverride.PartName]; ok {
-				return nil, newError(205, cOverride.PartName)
+			partName := strings.ToUpper(cOverride.PartName)
+			if _, ok := ct.overrides[partName]; ok {
+				return nil, newError(205, partName)
 			}
-			ct.addOverride(cOverride.PartName, cOverride.ContentType)
+			ct.addOverride(partName, cOverride.ContentType)
 		}
 	}
 	return ct, nil
