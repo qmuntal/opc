@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const opcCtx = "opc"
-
 // CompressionOption is an enumerable for the different compression options.
 type CompressionOption int
 
