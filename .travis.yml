@@ -14,8 +14,10 @@ notifications:
   - email: false
 
 before_script:
-  - make setup  
+  - go get -u github.com/mattn/goveralls
+  - go get -u golang.org/x/tools/cmd/cover
+  - go get -t -v .
 
 script:
-  - go test  ./... -coverprofile=coverage.out -race -timeout=5s
+  - go test . -coverprofile=coverage.out -race -timeout=5s
   - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci
