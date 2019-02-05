@@ -12,8 +12,8 @@ The Open Packaging specification describes an abstract model and physical format
 
 The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
 
-## Examples
-### Write
+### Examples
+#### Write
 ```go
 // Create a file to write our archive to.
 f, _ := os.Create("example.xlsx")
@@ -30,4 +30,20 @@ part.Write([]byte("This archive contains some text files."))
 
 // Make sure to check the error on Close.
 w.Close()
+```
+
+#### Read
+```go
+r, _ := opc.OpenReader("testdata/test.xlsx")
+defer r.Close()
+
+// Iterate through the files in the archive,
+// printing some of their contents.
+for _, f := range r.Files {
+  fmt.Printf("Contents of %s with type %s :\n", f.Name, f.ContentType)
+  rc, _ := f.Open()
+  io.CopyN(os.Stdout, rc, 68)
+  rc.Close()
+  fmt.Println()
+}
 ```
