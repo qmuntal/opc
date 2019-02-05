@@ -14,7 +14,7 @@ The OPC is the foundation technology for many new file formats: .docx, .pptx, .x
 
 ## Examples
 ### Write
-```
+```go
 // Create a file to write our archive to.
 f, _ := os.Create("example.xlsx")
 
