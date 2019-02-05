@@ -25,8 +25,8 @@ func Test_newReader(t *testing.T) {
 	p2 := newPackage()
 	p2.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			&Relationship{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
+			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p2.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
@@ -222,8 +222,8 @@ func Test_newReader_PartRelationships(t *testing.T) {
 	p3 := newPackage()
 	p3.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			&Relationship{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
+			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p3.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
@@ -235,15 +235,15 @@ func Test_newReader_PartRelationships(t *testing.T) {
 	p4 := newPackage()
 	p4.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			&Relationship{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
+			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
 		},
 	}
 	p4.parts["/PICTURES/SEASON/SUMMER/PHOTO.PNG"] = &Part{Name: "/pictures/season/summer/photo.png", ContentType: "image/png",
 		Relationships: []*Relationship{
-			&Relationship{ID: "rel-3", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			&Relationship{ID: "rel-4", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			&Relationship{ID: "rel-5", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-3", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-4", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+			{ID: "rel-5", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
 		},
 	}
 	p4.parts["/PICTURES/SUMMER/PHOTO2.PNG"] = &Part{Name: "/pictures/summer/photo2.png", ContentType: "image/png"}
