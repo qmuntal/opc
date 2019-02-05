@@ -1,11 +1,11 @@
-// Package gopc implements the ISO/IEC 29500-2, also known as the "Open Packaging Convention".
+// Package opc implements the ISO/IEC 29500-2, also known as the "Open Packaging Convention".
 //
 // The Open Packaging specification describes an abstract model and physical format conventions for the use of
 // XML, Unicode, ZIP, and other openly available technologies and specifications to organize the content and
 // resources of a document within a package.
 //
 // The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
-package gopc
+package opc
 
 import (
 	"encoding/xml"

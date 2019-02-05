@@ -1,10 +1,10 @@
-package gopc_test
+package opc_test
 
 import (
 	"bytes"
 	"log"
 
-	"github.com/qmuntal/gopc"
+	"github.com/qmuntal/opc"
 )
 
 func ExampleWriter() {
@@ -12,10 +12,10 @@ func ExampleWriter() {
 	buf := new(bytes.Buffer)
 
 	// Create a new OPC archive.
-	w := gopc.NewWriter(buf)
+	w := opc.NewWriter(buf)
 
 	// Create a new OPC part.
-	name := gopc.NormalizePartName("docs\\readme.txt")
+	name := opc.NormalizePartName("docs\\readme.txt")
 	part, err := w.Create(name, "text/plain")
 	if err != nil {
 		log.Fatal(err)

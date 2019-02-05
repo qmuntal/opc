@@ -1,1 +1,1 @@
-module github.com/qmuntal/gopc
+module github.com/qmuntal/opc

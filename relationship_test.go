@@ -1,4 +1,4 @@
-package gopc
+package opc
 
 import (
 	"bytes"
