@@ -549,3 +549,38 @@ func (ct *cTypeBuilder) withDefault(cType, ext string) *cTypeBuilder {
 func (ct *cTypeBuilder) String() string {
 	return fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">%s</Types>`, ct.ctype.String())
 }
+
+func TestOpenReader(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"extensioncustom", args{"testdata/extensioncustom.3mf"}, false},
+		{"overridecustom", args{"testdata/overridecustom.3mf"}, false},
+		{"overridepositive", args{"testdata/overridepositive.3mf"}, false},
+		{"component", args{"testdata/component.3mf"}, false},
+		{"invalid", args{"testdata/invalid.txt"}, true},
+		{"error", args{""}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := OpenReader(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OpenReader() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				got.Files[0].Open()
+				err = got.Close()
+				if (err != nil) != tt.wantErr {
+					t.Errorf("File.Open() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+			}
+		})
+	}
+}

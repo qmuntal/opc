@@ -37,7 +37,7 @@ func ExampleWriter() {
 }
 
 func ExampleReader() {
-	r, err := opc.OpenReader("testdata/test.xlsx")
+	r, err := opc.OpenReader("testdata/component.3mf")
 	if err != nil {
 		log.Fatal(err)
 	}
