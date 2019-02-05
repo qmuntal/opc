@@ -186,7 +186,7 @@ func (c *contentTypes) findType(name string) (string, error) {
 	}
 	ext := filepath.Ext(name)
 	if ext != "" {
-		if t, ok := c.defaults[ext[1:]]; ok {
+		if t, ok := c.defaults[strings.ToLower(ext[1:])]; ok {
 			return t, nil
 		}
 	}

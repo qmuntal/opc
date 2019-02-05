@@ -110,12 +110,32 @@ func Test_newReader_ContentType(t *testing.T) {
 <Default ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
 </Types>`
 
+	p := newPackage()
+	p.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
+	p.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.PNG", ContentType: "image/png"}
+	p.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
+	p.contentTypes.addDefault("png", "image/png")
+	p.contentTypes.addDefault("xml", "application/xml")
+
 	tests := []struct {
 		name    string
 		files   []archiveFile
 		want    *pkg
 		wantErr bool
 	}{
+		{"baseCheckCaseInsensitive", []archiveFile{
+			newMockFile(
+				"[Content_Types].xml",
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/APP.xml").withDefault("image/png", "png").withDefault("application/xml", "xml").String())),
+				nil,
+			),
+			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("3D/", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("pictures/photo.PNG", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, p, false},
+
 		{"openError", []archiveFile{
 			newMockFile("a.xml", nil, nil),
 			newMockFile("[Content_Types].xml", ioutil.NopCloser(nil), errors.New("")),

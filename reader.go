@@ -43,12 +43,13 @@ func newReader(a archive) (*Reader, error) {
 }
 
 func (r *Reader) loadPackage() error {
-	files := r.r.Files()
 	ct, rels, err := r.loadPartPropierties()
 	if err != nil {
 		return err
 	}
+	files := r.r.Files()
 	r.Parts = make([]*Part, 0, len(files)-1) // -1 is for [Content_Types].xml
+
 	for _, file := range files {
 		fileName := "/" + file.Name()
 		// skip content types part, relationship parts and directories
@@ -61,15 +62,15 @@ func (r *Reader) loadPackage() error {
 				return err
 			}
 			r.Properties = *cp
-			continue
+		} else {
+			cType, err := ct.findType(fileName)
+			if err != nil {
+				return err
+			}
+			part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
+			r.Parts = append(r.Parts, part)
+			r.p.add(part)
 		}
-		cType, err := ct.findType(fileName)
-		if err != nil {
-			return err
-		}
-		part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
-		r.Parts = append(r.Parts, part)
-		r.p.add(part)
 	}
 	r.p.contentTypes = *ct
 	return nil
@@ -78,27 +79,20 @@ func (r *Reader) loadPackage() error {
 func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error) {
 	var ct *contentTypes
 	rels := new(relationshipsPart)
-	var err error
-	files := r.r.Files()
-	for _, file := range files {
+	for _, file := range r.r.Files() {
+		var err error
 		name := "/" + file.Name()
 		if strings.EqualFold(name, contentTypesName) {
 			ct, err = r.loadContentType(file)
-			if err != nil {
-				return nil, nil, err
-			}
 		} else if isRelationshipURI(name) {
 			if strings.EqualFold(name, packageRelName) {
 				err = r.loadPackageRelationships(file)
-				if err != nil {
-					return nil, nil, err
-				}
 			} else {
-				err := loadRelationships(file, rels)
-				if err != nil {
-					return nil, nil, err
-				}
+				err = loadRelationships(file, rels)
 			}
+		}
+		if err != nil {
+			return nil, nil, err
 		}
 	}
 	if ct == nil {
@@ -154,6 +148,7 @@ func (r *Reader) loadPackageRelationships(file archiveFile) error {
 	for _, rel := range rls {
 		if strings.EqualFold(rel.Type, corePropsRel) {
 			r.Properties.PartName = rel.TargetURI
+			break
 		}
 	}
 	return nil
