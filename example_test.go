@@ -2,7 +2,10 @@ package opc_test
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"log"
+	"os"
 
 	"github.com/qmuntal/opc"
 )
@@ -30,5 +33,29 @@ func ExampleWriter() {
 	// Make sure to check the error on Close.
 	if err := w.Close(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func ExampleReader() {
+	r, err := opc.OpenReader("testdata/test.xlsx")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer r.Close()
+
+	// Iterate through the files in the archive,
+	// printing some of their contents.
+	for _, f := range r.Files {
+		fmt.Printf("Contents of %s with type %s :\n", f.Name, f.ContentType)
+		rc, err := f.Open()
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = io.CopyN(os.Stdout, rc, 68)
+		if err != nil {
+			log.Fatal(err)
+		}
+		rc.Close()
+		fmt.Println()
 	}
 }

@@ -2,6 +2,7 @@ package opc
 
 import (
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -15,9 +16,44 @@ type archive interface {
 	Files() []archiveFile
 }
 
+type ReadCloser struct {
+	f *os.File
+	*Reader
+}
+
+// OpenReader will open the OPC file specified by name and return a ReadCloser.
+func OpenReader(name string) (*ReadCloser, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+	r, err := NewReader(f, fi.Size())
+	return &ReadCloser{f: f, Reader: r}, err
+}
+
+// Close closes the OPC file, rendering it unusable for I/O.
+func (r *ReadCloser) Close() error {
+	return r.f.Close()
+}
+
+// File is used to read a part from the OPC package.
+type File struct {
+	*Part
+	a archiveFile
+}
+
+func (f *File) Open() (io.ReadCloser, error) {
+	return f.a.Open()
+}
+
 // Reader implements a OPC file reader.
 type Reader struct {
-	Parts         []*Part
+	Files         []*File
 	Relationships []*Relationship
 	Properties    CoreProperties
 	p             *pkg
@@ -48,7 +84,7 @@ func (r *Reader) loadPackage() error {
 		return err
 	}
 	files := r.r.Files()
-	r.Parts = make([]*Part, 0, len(files)-1) // -1 is for [Content_Types].xml
+	r.Files = make([]*File, 0, len(files)-1) // -1 is for [Content_Types].xml
 
 	for _, file := range files {
 		fileName := "/" + file.Name()
@@ -68,7 +104,7 @@ func (r *Reader) loadPackage() error {
 				return err
 			}
 			part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
-			r.Parts = append(r.Parts, part)
+			r.Files = append(r.Files, &File{part, file})
 			r.p.add(part)
 		}
 	}
