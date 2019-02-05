@@ -93,10 +93,10 @@ func (p *pkg) checkStringsPrefixCollision(s1, s2 string) bool {
 	return strings.HasPrefix(s1, s2) && len(s1) > len(s2) && s1[len(s2)] == '/'
 }
 
-type contentTpesXML struct {
-	XMLName xml.Name `xml:"Types"`
-	XML     string   `xml:"xmlns,attr"`
-	Types   []interface{}
+type contentTypesXML struct {
+	XMLName xml.Name      `xml:"Types"`
+	XML     string        `xml:"xmlns,attr"`
+	Types   []interface{} `xml:",any"`
 }
 
 type defaultContentTypeXML struct {
@@ -112,12 +112,12 @@ type overrideContentTypeXML struct {
 }
 
 type contentTypes struct {
-	defaults  map[string]string // extenstion:contenttype
+	defaults  map[string]string // extension:contenttype
 	overrides map[string]string // partname:contenttype
 }
 
-func (c *contentTypes) toXML() *contentTpesXML {
-	cx := &contentTpesXML{XML: "http://schemas.openxmlformats.org/package/2006/content-types"}
+func (c *contentTypes) toXML() *contentTypesXML {
+	cx := &contentTypesXML{XML: "http://schemas.openxmlformats.org/package/2006/content-types"}
 	if c.defaults != nil {
 		for e, ct := range c.defaults {
 			cx.Types = append(cx.Types, &defaultContentTypeXML{Extension: e, ContentType: ct})
@@ -180,7 +180,77 @@ func (c *contentTypes) addDefault(extension, contentType string) {
 	c.defaults[extension] = contentType
 }
 
-type corePropertiesXML struct {
+func (c *contentTypes) findType(name string) (string, error) {
+	if t, ok := c.overrides[strings.ToUpper(name)]; ok {
+		return t, nil
+	}
+	ext := filepath.Ext(name)
+	if ext != "" {
+		if t, ok := c.defaults[strings.ToLower(ext[1:])]; ok {
+			return t, nil
+		}
+	}
+	return "", newError(208, name)
+}
+
+type contentTypesXMLReader struct {
+	XMLName xml.Name `xml:"Types"`
+	XML     string   `xml:"xmlns,attr"`
+	Types   []mixed  `xml:",any"`
+}
+
+type mixed struct {
+	Value interface{}
+}
+
+func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	switch start.Name.Local {
+	case "Override":
+		var e overrideContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	case "Default":
+		var e defaultContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	default:
+		return newError(204, "/")
+	}
+	return nil
+}
+
+func decodeContentTypes(r io.Reader) (*contentTypes, error) {
+	ctdecode := new(contentTypesXMLReader)
+	if err := xml.NewDecoder(r).Decode(ctdecode); err != nil {
+		return nil, err
+	}
+	ct := new(contentTypes)
+	for _, c := range ctdecode.Types {
+		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
+			ext := strings.ToLower(cDefault.Extension)
+			if ext == "" {
+				return nil, newError(206, "/")
+			}
+			if _, ok := ct.defaults[ext]; ok {
+				return nil, newError(205, "/")
+			}
+			ct.addDefault(ext, cDefault.ContentType)
+		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
+			partName := strings.ToUpper(cOverride.PartName)
+			if _, ok := ct.overrides[partName]; ok {
+				return nil, newError(205, partName)
+			}
+			ct.addOverride(partName, cOverride.ContentType)
+		}
+	}
+	return ct, nil
+}
+
+type corePropertiesXMLMarshal struct {
 	XMLName        xml.Name `xml:"coreProperties"`
 	XML            string   `xml:"xmlns,attr"`
 	XMLDCTERMS     string   `xml:"xmlns:dcterms,attr"`
@@ -199,6 +269,28 @@ type corePropertiesXML struct {
 	Revision       string   `xml:"revision,omitempty"`
 	Subject        string   `xml:"dc:subject,omitempty"`
 	Title          string   `xml:"dc:title,omitempty"`
+	Version        string   `xml:"version,omitempty"`
+}
+
+type corePropertiesXMLUnmarshal struct {
+	XMLName        xml.Name `xml:"coreProperties"`
+	XML            string   `xml:"xmlns,attr"`
+	XMLDCTERMS     string   `xml:"dcterms,attr"`
+	XMLDC          string   `xml:"dc,attr"`
+	Category       string   `xml:"category,omitempty"`
+	ContentStatus  string   `xml:"contentStatus,omitempty"`
+	Created        string   `xml:"created,omitempty"`
+	Creator        string   `xml:"creator,omitempty"`
+	Description    string   `xml:"description,omitempty"`
+	Identifier     string   `xml:"identifier,omitempty"`
+	Keywords       string   `xml:"keywords,omitempty"`
+	Language       string   `xml:"language,omitempty"`
+	LastModifiedBy string   `xml:"lastModifiedBy,omitempty"`
+	LastPrinted    string   `xml:"lastPrinted,omitempty"`
+	Modified       string   `xml:"modified,omitempty"`
+	Revision       string   `xml:"revision,omitempty"`
+	Subject        string   `xml:"subject,omitempty"`
+	Title          string   `xml:"title,omitempty"`
 	Version        string   `xml:"version,omitempty"`
 }
 
@@ -224,7 +316,7 @@ type CoreProperties struct {
 
 func (c *CoreProperties) encode(w io.Writer) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
-	return xml.NewEncoder(w).Encode(&corePropertiesXML{
+	return xml.NewEncoder(w).Encode(&corePropertiesXMLMarshal{
 		xml.Name{Local: "coreProperties"},
 		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
 		"http://purl.org/dc/terms/",
@@ -235,4 +327,18 @@ func (c *CoreProperties) encode(w io.Writer) error {
 		c.LastPrinted, c.Modified, c.Revision,
 		c.Subject, c.Title, c.Version,
 	})
+}
+
+func decodeCoreProperties(r io.Reader) (*CoreProperties, error) {
+	propDecode := new(corePropertiesXMLUnmarshal)
+	if err := xml.NewDecoder(r).Decode(propDecode); err != nil {
+		return nil, err
+	}
+	prop := &CoreProperties{Category: propDecode.Category, ContentStatus: propDecode.ContentStatus,
+		Created: propDecode.Created, Creator: propDecode.Creator, Description: propDecode.Description,
+		Identifier: propDecode.Identifier, Keywords: propDecode.Keywords, Language: propDecode.Language,
+		LastModifiedBy: propDecode.LastModifiedBy, LastPrinted: propDecode.LastPrinted, Modified: propDecode.Modified,
+		Revision: propDecode.Revision, Subject: propDecode.Subject, Title: propDecode.Title, Version: propDecode.Version}
+
+	return prop, nil
 }

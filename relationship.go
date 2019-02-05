@@ -35,6 +35,19 @@ type Relationship struct {
 	TargetMode TargetMode // Indicates whether or not the target describes a resource inside the package or outside the package.
 }
 
+type relationshipsXML struct {
+	XMLName xml.Name           `xml:"Relationships"`
+	XML     string             `xml:"xmlns,attr"`
+	RelsXML []*relationshipXML `xml:"Relationship"`
+}
+
+type relationshipXML struct {
+	ID        string `xml:"Id,attr"`
+	RelType   string `xml:"Type,attr"`
+	TargetURI string `xml:"Target,attr"`
+	Mode      string `xml:"TargetMode,attr,omitempty"`
+}
+
 func (r *Relationship) ensureID() {
 	if r.ID != "" {
 		return
@@ -58,17 +71,21 @@ func (r *Relationship) validate(sourceURI string) error {
 	return r.validateRelationshipTarget(sourceURI)
 }
 
+func (r *Relationship) normalizeTargetURI() {
+	if r.TargetMode == ModeInternal {
+		if !strings.HasPrefix(r.TargetURI, "/") && !strings.HasPrefix(r.TargetURI, "\\") && !strings.HasPrefix(r.TargetURI, ".") {
+			r.TargetURI = "/" + r.TargetURI
+		}
+	}
+}
+
 func (r *Relationship) toXML() *relationshipXML {
 	var targetMode string
 	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
-	x := &relationshipXML{ID: r.ID, Type: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
-	if r.TargetMode == ModeInternal {
-		if !strings.HasPrefix(x.TargetURI, "/") && !strings.HasPrefix(x.TargetURI, "\\") && !strings.HasPrefix(x.TargetURI, ".") {
-			x.TargetURI = "/" + x.TargetURI
-		}
-	}
+	r.normalizeTargetURI()
+	x := &relationshipXML{ID: r.ID, RelType: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
 	return x
 }
 
@@ -132,19 +149,6 @@ func validateRelationships(sourceURI string, rs []*Relationship) error {
 	return nil
 }
 
-type relationshipXML struct {
-	ID        string `xml:"Id,attr"`
-	Type      string `xml:"Type,attr"`
-	TargetURI string `xml:"Target,attr"`
-	Mode      string `xml:"TargetMode,attr,omitempty"`
-}
-
-type relationshipsXML struct {
-	XMLName xml.Name           `xml:"Relationships"`
-	XML     string             `xml:"xmlns,attr"`
-	RelsXML []*relationshipXML `xml:"Relationship"`
-}
-
 func encodeRelationships(w io.Writer, rs []*Relationship) error {
 	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
@@ -152,4 +156,41 @@ func encodeRelationships(w io.Writer, rs []*Relationship) error {
 		re.RelsXML = append(re.RelsXML, r.toXML())
 	}
 	return xml.NewEncoder(w).Encode(re)
+}
+
+func decodeRelationships(r io.Reader) ([]*Relationship, error) {
+	relDecode := new(relationshipsXML)
+	if err := xml.NewDecoder(r).Decode(relDecode); err != nil {
+		return nil, err
+	}
+	rel := make([]*Relationship, len(relDecode.RelsXML))
+	for i, rl := range relDecode.RelsXML {
+		newRel := &Relationship{ID: rl.ID, TargetURI: rl.TargetURI, Type: rl.RelType}
+		if rl.Mode == "" || rl.Mode == "Internal" {
+			newRel.TargetMode = ModeInternal
+		} else {
+			newRel.TargetMode = ModeExternal
+		}
+		newRel.normalizeTargetURI()
+		rel[i] = newRel
+	}
+	return rel, nil
+}
+
+type relationshipsPart struct {
+	relation map[string][]*Relationship // partname:relationship
+}
+
+func (rp *relationshipsPart) findRelationship(name string) []*Relationship {
+	if rp.relation == nil {
+		rp.relation = make(map[string][]*Relationship)
+	}
+	return rp.relation[strings.ToUpper(name)]
+}
+
+func (rp *relationshipsPart) addRelationship(name string, r []*Relationship) {
+	if rp.relation == nil {
+		rp.relation = make(map[string][]*Relationship)
+	}
+	rp.relation[strings.ToUpper(name)] = r
 }
