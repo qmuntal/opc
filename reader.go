@@ -16,6 +16,7 @@ type archive interface {
 	Files() []archiveFile
 }
 
+// ReadCloser wrapps a Reader than can be closed.
 type ReadCloser struct {
 	f *os.File
 	*Reader
@@ -47,6 +48,8 @@ type File struct {
 	a archiveFile
 }
 
+// Open returns a ReadCloser that provides access to the File's contents.
+// Multiple files may be read concurrently.
 func (f *File) Open() (io.ReadCloser, error) {
 	return f.a.Open()
 }
