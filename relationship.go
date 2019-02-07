@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net/url"
 	"strings"
-	"time"
 )
 
 // TargetMode is an enumerable for the different target modes.
@@ -48,15 +47,14 @@ type relationshipXML struct {
 	Mode      string `xml:"TargetMode,attr,omitempty"`
 }
 
-func (r *Relationship) ensureID() {
+func (r *Relationship) ensureID(rnd *rand.Rand) {
 	if r.ID != "" {
 		return
 	}
 
 	b := make([]byte, 8)
-	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := range b {
-		b[i] = charBytes[rd.Intn(len(charBytes))]
+		b[i] = charBytes[rnd.Intn(len(charBytes))]
 	}
 	r.ID = string(b)
 }

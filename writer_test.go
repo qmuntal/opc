@@ -3,30 +3,9 @@ package opc
 import (
 	"archive/zip"
 	"bytes"
-	"reflect"
+	"math/rand"
 	"testing"
 )
-
-func TestNewWriter(t *testing.T) {
-	tests := []struct {
-		name  string
-		want  *Writer
-		wantW string
-	}{
-		{"base", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{})}, ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			if got := NewWriter(w); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewWriter() = %v, want %v", got, tt.want)
-			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("NewWriter() = %v, want %v", gotW, tt.wantW)
-			}
-		})
-	}
-}
 
 func TestWriter_Flush(t *testing.T) {
 	tests := []struct {
@@ -45,6 +24,10 @@ func TestWriter_Flush(t *testing.T) {
 	}
 }
 
+func fakeRand() *rand.Rand {
+	return rand.New(rand.NewSource(42))
+}
+
 func TestWriter_Close(t *testing.T) {
 	p := newPackage()
 	p.contentTypes.add("/a.xml", "a/b")
@@ -61,15 +44,15 @@ func TestWriter_Close(t *testing.T) {
 		wantErr bool
 	}{
 		{"base", NewWriter(&bytes.Buffer{}), false},
-		{"invalidContentType", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{})}, true},
-		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{})}, false},
-		{"invalidPartRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, true},
-		{"invalidOwnRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Relationships: []*Relationship{{}}}, true},
-		{"withDuplicatedCoreProps", &Writer{p: pCore, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}}, true},
-		{"withDuplicatedRels", &Writer{p: pRel, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}}, true},
-		{"withDuplicatedRels", &Writer{p: pRel, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}}, true},
-		{"withCoreProps", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}}, false},
-		{"withCorePropsWithName", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song", PartName: "/props.xml"}}, false},
+		{"invalidContentType", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{}), rnd: fakeRand()}, true},
+		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{}), rnd: fakeRand()}, false},
+		{"invalidPartRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}, rnd: fakeRand()}, true},
+		{"invalidOwnRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Relationships: []*Relationship{{}}, rnd: fakeRand()}, true},
+		{"withDuplicatedCoreProps", &Writer{p: pCore, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, true},
+		{"withDuplicatedRels", &Writer{p: pRel, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, true},
+		{"withDuplicatedRels", &Writer{p: pRel, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, true},
+		{"withCoreProps", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, false},
+		{"withCorePropsWithName", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song", PartName: "/props.xml"}, rnd: fakeRand()}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -169,8 +152,8 @@ func TestWriter_CreatePart(t *testing.T) {
 	}{
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
-		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
-		{"failRel2", &Writer{p: pRel, w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, true},
+		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}, rnd: fakeRand()}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
+		{"failRel2", &Writer{p: pRel, w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}, rnd: fakeRand()}, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, true},
 		{"base", w, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, false},
 		{"multipleDiffName", w, args{&Part{"/b.xml", "a/b", nil}, CompressionNone}, false},
 		{"multipleDiffContentType", w, args{&Part{"/c.xml", "c/d", nil}, CompressionNone}, false},
@@ -199,11 +182,11 @@ func TestWriter_createLastPartRelationships(t *testing.T) {
 		w       *Writer
 		wantErr bool
 	}{
-		{"base", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}}, false},
-		{"base2", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/b/a.xml", Relationships: []*Relationship{rel}}}, false},
+		{"base", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel}}, rnd: fakeRand()}, false},
+		{"base2", &Writer{p: newPackage(), w: zip.NewWriter(nil), last: &Part{Name: "/b/a.xml", Relationships: []*Relationship{rel}}, rnd: fakeRand()}, false},
 		{"hasSome", w, false},
-		{"duplicated", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel, rel}}}, true},
-		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{{}}}}, true},
+		{"duplicated", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{rel, rel}}, rnd: fakeRand()}, true},
+		{"invalidRelation", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/a.xml", Relationships: []*Relationship{{}}}, rnd: fakeRand()}, true},
 		{"empty", NewWriter(&bytes.Buffer{}), false},
 	}
 	for _, tt := range tests {
