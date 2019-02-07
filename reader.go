@@ -10,6 +10,7 @@ import (
 type archiveFile interface {
 	Open() (io.ReadCloser, error)
 	Name() string
+	Size() int
 }
 
 type archive interface {
@@ -45,7 +46,8 @@ func (r *ReadCloser) Close() error {
 // File is used to read a part from the OPC package.
 type File struct {
 	*Part
-	a archiveFile
+	Size int
+	a    archiveFile
 }
 
 // Open returns a ReadCloser that provides access to the File's contents.
@@ -107,7 +109,7 @@ func (r *Reader) loadPackage() error {
 				return err
 			}
 			part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
-			r.Files = append(r.Files, &File{part, file})
+			r.Files = append(r.Files, &File{part, file.Size(), file})
 			r.p.add(part)
 		}
 	}

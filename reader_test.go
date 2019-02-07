@@ -496,6 +496,10 @@ func (m *mockFile) Name() string {
 	return args.String(0)
 }
 
+func (m *mockFile) Size() int {
+	return 0
+}
+
 type mockArchive struct {
 	mock.Mock
 }

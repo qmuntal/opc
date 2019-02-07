@@ -17,6 +17,10 @@ func (zf *zipFile) Name() string {
 	return zf.f.Name
 }
 
+func (zf *zipFile) Size() int {
+	return int(zf.f.UncompressedSize64)
+}
+
 type zipArchive struct {
 	r *zip.Reader
 }
