@@ -12,8 +12,17 @@ The Open Packaging specification describes an abstract model and physical format
 
 The OPC is the foundation technology for many new file formats: .docx, .pptx, .xlsx, .3mf, .dwfx, ...
 
-### Examples
-#### Write
+## Features
+- [x] Package reader and writer
+- [x] Package core properties and relationships
+- [x] Part relationships
+- [x] ZIP mapping
+- [x] Package, relationships and parts validation against specs
+- [ ] Part interleaved pieces
+- [ ] Digital signatures
+
+## Examples
+### Write
 ```go
 // Create a file to write our archive to.
 f, _ := os.Create("example.xlsx")
@@ -32,7 +41,7 @@ part.Write([]byte("This archive contains some text files."))
 w.Close()
 ```
 
-#### Read
+### Read
 ```go
 r, _ := opc.OpenReader("testdata/test.xlsx")
 defer r.Close()
