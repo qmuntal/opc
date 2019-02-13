@@ -94,6 +94,62 @@ func Test_newReader(t *testing.T) {
 	}
 }
 
+func Test_newReader_File(t *testing.T) {
+	tests := []struct {
+		name  string
+		files []archiveFile
+		want  int
+	}{
+		{"duplicated", []archiveFile{
+			newMockFile(
+				"[Content_Types].xml",
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withDefault("image/png", "png").String())),
+				nil,
+			),
+			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, 112},
+		{"doubleDots", []archiveFile{
+			newMockFile(
+				"[Content_Types].xml",
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withDefault("image/png", "png").String())),
+				nil,
+			),
+			newMockFile("pictures/../photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, 110},
+		{"oneDot", []archiveFile{
+			newMockFile(
+				"[Content_Types].xml",
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withDefault("image/png", "png").String())),
+				nil,
+			),
+			newMockFile("pictures/../photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, 110},
+		{"emptySegment", []archiveFile{
+			newMockFile(
+				"[Content_Types].xml",
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withDefault("image/png", "png").String())),
+				nil,
+			),
+			newMockFile("//pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+		}, 103},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := new(mockArchive)
+			a.On("Files").Return(tt.files)
+			_, err := newReader(a)
+			if err == nil {
+				t.Error("newReader() wantError")
+				return
+			}
+			if got := err.(*Error).Code(); got != tt.want {
+				t.Errorf("newReader() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_newReader_ContentType(t *testing.T) {
 	invalidType := `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">

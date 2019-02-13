@@ -110,7 +110,9 @@ func (r *Reader) loadPackage() error {
 			}
 			part := &Part{Name: fileName, ContentType: cType, Relationships: rels.findRelationship(fileName)}
 			r.Files = append(r.Files, &File{part, file.Size(), file})
-			r.p.add(part)
+			if err = r.p.add(part); err != nil {
+				return err
+			}
 		}
 	}
 	r.p.contentTypes = *ct
