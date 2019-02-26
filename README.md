@@ -6,6 +6,7 @@
 [![codecov](https://coveralls.io/repos/github/qmuntal/opc/badge.svg)](https://coveralls.io/github/qmuntal/opc?branch=master)
 [![codeclimate](https://codeclimate.com/github/qmuntal/opc/badges/gpa.svg)](https://codeclimate.com/github/qmuntal/opc)
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)  
 
 Package opc implements the ISO/IEC 29500-2, also known as the [Open Packaging Convention](https://en.wikipedia.org/wiki/Open_Packaging_Conventions).
 
