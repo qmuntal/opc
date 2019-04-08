@@ -41,3 +41,7 @@ func (z *zipArchive) Files() []archiveFile {
 	}
 	return ret
 }
+
+func (z *zipArchive) RegisterDecompressor(method uint16, dcomp func(r io.Reader) io.ReadCloser) {
+	z.r.RegisterDecompressor(method, dcomp)
+}

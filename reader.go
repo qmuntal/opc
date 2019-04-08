@@ -1,6 +1,7 @@
 package opc
 
 import (
+	"archive/zip"
 	"io"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ type archiveFile interface {
 
 type archive interface {
 	Files() []archiveFile
+	RegisterDecompressor(method uint16, dcomp func(r io.Reader) io.ReadCloser)
 }
 
 // ReadCloser wrapps a Reader than can be closed.
@@ -81,6 +83,10 @@ func newReader(a archive) (*Reader, error) {
 		return nil, err
 	}
 	return r, nil
+}
+
+func (r *Reader) SetDecompressor(dcomp func(r io.Reader) io.ReadCloser) {
+	r.r.RegisterDecompressor(zip.Deflate, dcomp)
 }
 
 func (r *Reader) loadPackage() error {

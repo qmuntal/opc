@@ -1,7 +1,9 @@
 package opc
 
 import (
+	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"errors"
 	"fmt"
 	"io"
@@ -81,8 +83,10 @@ func Test_newReader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := new(mockArchive)
+			a.On("RegisterDecompressor", zip.Deflate, mock.Anything).Maybe()
 			a.On("Files").Return(tt.files)
 			got, err := newReader(a)
+			got.SetDecompressor(func(r io.Reader) io.ReadCloser { return flate.NewReader(r) })
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -565,6 +569,11 @@ func (m *mockArchive) Files() []archiveFile {
 	return args.Get(0).([]archiveFile)
 }
 
+func (m *mockArchive) RegisterDecompressor(args1 uint16, args2 func(r io.Reader) io.ReadCloser) {
+	m.Called(args1, args2)
+	return
+}
+
 func newMockFile(name string, r io.ReadCloser, e error) *mockFile {
 	f := new(mockFile)
 	f.On("Name").Return(name)
@@ -634,6 +643,7 @@ func TestOpenReader(t *testing.T) {
 				return
 			}
 			if err == nil {
+				got.SetDecompressor(func(r io.Reader) io.ReadCloser { return flate.NewReader(r) })
 				got.Files[0].Open()
 				err = got.Close()
 				if (err != nil) != tt.wantErr {
