@@ -85,6 +85,7 @@ func newReader(a archive) (*Reader, error) {
 	return r, nil
 }
 
+// SetDecompressor sets or overrides a custom decompressor for the DEFLATE.
 func (r *Reader) SetDecompressor(dcomp func(r io.Reader) io.ReadCloser) {
 	r.r.RegisterDecompressor(zip.Deflate, dcomp)
 }
