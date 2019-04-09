@@ -100,3 +100,29 @@ func TestPart_validate(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveRelationship(t *testing.T) {
+	type args struct {
+		source string
+		rel    string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"package", args{"/", "c.xml"}, "/c.xml"},
+		{"packageWin", args{"\\", "c.xml"}, "/c.xml"},
+		{"rel", args{"/3D/3dmodel.model", "c.xml"}, "/3D/c.xml"},
+		{"rel", args{"/3D/3dmodel.model", "/3D/box1.model"}, "/3D/box1.model"},
+		{"rel", args{"/3D/box3.model", "/2D/2dmodel.model"}, "/2D/2dmodel.model"},
+		{"relChild", args{"/3D/box3.model", "2D/2dmodel.model"}, "/3D/2D/2dmodel.model"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ResolveRelationship(tt.args.source, tt.args.rel); got != tt.want {
+				t.Errorf("ResolveRelationship() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

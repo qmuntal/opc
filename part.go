@@ -1,8 +1,10 @@
 package opc
 
 import (
+	"fmt"
 	"mime"
 	"net/url"
+	"path/filepath"
 	"strings"
 )
 
@@ -27,6 +29,21 @@ func (p *Part) validate() error {
 }
 
 var defaultRef, _ = url.Parse("http://defaultcontainer/")
+
+// ResolveRelationship returns the absolute URI (from the package root) of the part pointed by a relationship of a source part.
+// This method should be used in places where we have a target relationship URI and we want to get the
+// name of the part it targets with respect to the source part.
+// The source can be a valid part URI, for part relationships, or "/", for package relationships.
+func ResolveRelationship(source string, rel string) string {
+	if !strings.HasPrefix(rel, "/") && !strings.HasPrefix(rel, "\\") {
+		sourceDir := strings.Replace(filepath.Dir(source), "\\", "/", -1)
+		if sourceDir == "/" {
+			return "/" + rel
+		}
+		return fmt.Sprintf("%s/%s", sourceDir, rel)
+	}
+	return rel
+}
 
 // NormalizePartName transforms the input name so it follows the constrains specified in the ISO/IEC 29500-2 §9.1.1:
 //     part-URI = 1*( "/" segment )
