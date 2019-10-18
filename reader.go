@@ -2,6 +2,8 @@ package opc
 
 import (
 	"archive/zip"
+	"encoding/xml"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -91,7 +93,7 @@ func (r *Reader) SetDecompressor(dcomp func(r io.Reader) io.ReadCloser) {
 }
 
 func (r *Reader) loadPackage() error {
-	ct, rels, err := r.loadPartPropierties()
+	ct, rels, err := r.loadPartProperties()
 	if err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func (r *Reader) loadPackage() error {
 	return nil
 }
 
-func (r *Reader) loadPartPropierties() (*contentTypes, *relationshipsPart, error) {
+func (r *Reader) loadPartProperties() (*contentTypes, *relationshipsPart, error) {
 	var ct *contentTypes
 	rels := new(relationshipsPart)
 	for _, file := range r.r.Files() {
@@ -155,7 +157,7 @@ func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
 	reader, err := file.Open()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opc: %s: cannot be opened: %w", contentTypesName, err)
 	}
 	return decodeContentTypes(reader)
 }
@@ -163,7 +165,7 @@ func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
 func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
 	reader, err := file.Open()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opc: %s: cannot be opened: %w", r.Properties.PartName, err)
 	}
 	return decodeCoreProperties(reader)
 }
@@ -171,9 +173,9 @@ func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
 func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 	reader, err := file.Open()
 	if err != nil {
-		return err
+		return fmt.Errorf("opc: %s: cannot be opened: %w", file.Name(), err)
 	}
-	rls, err := decodeRelationships(reader)
+	rls, err := decodeRelationships(reader, file.Name())
 	if err != nil {
 		return err
 	}
@@ -188,9 +190,9 @@ func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 func (r *Reader) loadPackageRelationships(file archiveFile) error {
 	reader, err := file.Open()
 	if err != nil {
-		return err
+		return fmt.Errorf("opc: %s: cannot be opened: %w", file.Name(), err)
 	}
-	rls, err := decodeRelationships(reader)
+	rls, err := decodeRelationships(reader, file.Name())
 	if err != nil {
 		return err
 	}
@@ -202,4 +204,59 @@ func (r *Reader) loadPackageRelationships(file archiveFile) error {
 		}
 	}
 	return nil
+}
+
+type contentTypesXMLReader struct {
+	XMLName xml.Name `xml:"Types"`
+	XML     string   `xml:"xmlns,attr"`
+	Types   []mixed  `xml:",any"`
+}
+
+type mixed struct {
+	Value interface{}
+}
+
+func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	switch start.Name.Local {
+	case "Override":
+		var e overrideContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	case "Default":
+		var e defaultContentTypeXML
+		if err := d.DecodeElement(&e, &start); err != nil {
+			return err
+		}
+		m.Value = e
+	}
+	return nil
+}
+
+func decodeContentTypes(r io.Reader) (*contentTypes, error) {
+	ctdecode := new(contentTypesXMLReader)
+	if err := xml.NewDecoder(r).Decode(ctdecode); err != nil {
+		return nil, fmt.Errorf("opc: %s: cannot be decoded: %w", contentTypesName, err)
+	}
+	ct := new(contentTypes)
+	for _, c := range ctdecode.Types {
+		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
+			ext := strings.ToLower(cDefault.Extension)
+			if ext == "" {
+				return nil, newError(206, "/")
+			}
+			if _, ok := ct.defaults[ext]; ok {
+				return nil, newError(205, "/")
+			}
+			ct.addDefault(ext, cDefault.ContentType)
+		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
+			partName := strings.ToUpper(cOverride.PartName)
+			if _, ok := ct.overrides[partName]; ok {
+				return nil, newError(205, partName)
+			}
+			ct.addOverride(partName, cOverride.ContentType)
+		}
+	}
+	return ct, nil
 }

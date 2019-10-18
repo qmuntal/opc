@@ -117,7 +117,7 @@ func validatePartName(name string) error {
 func validateURL(name string) error {
 	encodedURL, err := url.Parse(name)
 	if err != nil {
-		return err
+		return fmt.Errorf("opc: %s: invalid url: %w", name, err)
 	}
 
 	if name[0] != '/' || encodedURL.IsAbs() {
