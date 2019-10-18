@@ -24,7 +24,6 @@ var errorsString = map[int]string{
 	127: "a relationship type cannot be empty",
 	128: "a relationship target URI reference shall be a URI or a relative reference",
 	129: "a relationship target URI must be relative if the TargetMode is Internal",
-	204: "a content type must be Override or Default",
 	205: "a Default content type shall not have more than one content type for each extension and a Override shall not have more than one content type for each PartName",
 	206: "a package shall not have an empty extension in a Default element",
 	208: "a part content type shall appear in [Content_Types].xml",
@@ -74,7 +73,7 @@ func (e *Error) RelationshipID() string {
 func (e *Error) Error() string {
 	s, ok := errorsString[e.code]
 	if !ok {
-		panic("undefined error")
+		panic("opc: undefined error")
 	}
-	return fmt.Sprintf("OPC: Part='%s' | Reason='%s'", e.partName, s)
+	return fmt.Sprintf("opc: %s: %s", e.partName, s)
 }

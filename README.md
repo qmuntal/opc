@@ -1,7 +1,7 @@
 # opc
 
 [![Documentation](https://godoc.org/github.com/qmuntal/opc?status.svg)](https://godoc.org/github.com/qmuntal/opc)
-[![Build Status](https://travis-ci.org/qmuntal/opc.svg?branch=master)](https://travis-ci.org/qmuntal/opc)
+[![Build Status](https://travis-ci.com/qmuntal/opc.svg?branch=master)](https://travis-ci.com/qmuntal/opc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/qmuntal/opc)](https://goreportcard.com/report/github.com/qmuntal/opc)
 [![codecov](https://coveralls.io/repos/github/qmuntal/opc/badge.svg)](https://coveralls.io/github/qmuntal/opc?branch=master)
 [![codeclimate](https://codeclimate.com/github/qmuntal/opc/badges/gpa.svg)](https://codeclimate.com/github/qmuntal/opc)

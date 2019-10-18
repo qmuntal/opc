@@ -9,6 +9,7 @@ package opc
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"mime"
 	"path/filepath"
@@ -193,63 +194,6 @@ func (c *contentTypes) findType(name string) (string, error) {
 	return "", newError(208, name)
 }
 
-type contentTypesXMLReader struct {
-	XMLName xml.Name `xml:"Types"`
-	XML     string   `xml:"xmlns,attr"`
-	Types   []mixed  `xml:",any"`
-}
-
-type mixed struct {
-	Value interface{}
-}
-
-func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	switch start.Name.Local {
-	case "Override":
-		var e overrideContentTypeXML
-		if err := d.DecodeElement(&e, &start); err != nil {
-			return err
-		}
-		m.Value = e
-	case "Default":
-		var e defaultContentTypeXML
-		if err := d.DecodeElement(&e, &start); err != nil {
-			return err
-		}
-		m.Value = e
-	default:
-		return newError(204, "/")
-	}
-	return nil
-}
-
-func decodeContentTypes(r io.Reader) (*contentTypes, error) {
-	ctdecode := new(contentTypesXMLReader)
-	if err := xml.NewDecoder(r).Decode(ctdecode); err != nil {
-		return nil, err
-	}
-	ct := new(contentTypes)
-	for _, c := range ctdecode.Types {
-		if cDefault, ok := c.Value.(defaultContentTypeXML); ok {
-			ext := strings.ToLower(cDefault.Extension)
-			if ext == "" {
-				return nil, newError(206, "/")
-			}
-			if _, ok := ct.defaults[ext]; ok {
-				return nil, newError(205, "/")
-			}
-			ct.addDefault(ext, cDefault.ContentType)
-		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
-			partName := strings.ToUpper(cOverride.PartName)
-			if _, ok := ct.overrides[partName]; ok {
-				return nil, newError(205, partName)
-			}
-			ct.addOverride(partName, cOverride.ContentType)
-		}
-	}
-	return ct, nil
-}
-
 type corePropertiesXMLMarshal struct {
 	XMLName        xml.Name `xml:"coreProperties"`
 	XML            string   `xml:"xmlns,attr"`
@@ -332,7 +276,7 @@ func (c *CoreProperties) encode(w io.Writer) error {
 func decodeCoreProperties(r io.Reader) (*CoreProperties, error) {
 	propDecode := new(corePropertiesXMLUnmarshal)
 	if err := xml.NewDecoder(r).Decode(propDecode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opc: %s: cannot be decoded: %v", contentTypesName, err)
 	}
 	prop := &CoreProperties{Category: propDecode.Category, ContentStatus: propDecode.ContentStatus,
 		Created: propDecode.Created, Creator: propDecode.Creator, Description: propDecode.Description,

@@ -183,7 +183,7 @@ func (w *Writer) addToPackage(part *Part, compression CompressionOption) (io.Wri
 	pw, err := w.w.CreateHeader(fh)
 	if err != nil {
 		w.p.deletePart(part.Name)
-		return nil, err
+		return nil, fmt.Errorf("opc: %s: cannot be created: %v", part.Name, err)
 	}
 	return pw, nil
 }
