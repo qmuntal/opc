@@ -74,7 +74,7 @@ func (e *Error) RelationshipID() string {
 func (e *Error) Error() string {
 	s, ok := errorsString[e.code]
 	if !ok {
-		panic("undefined error")
+		panic("opc: undefined error")
 	}
-	return fmt.Sprintf("OPC: Part='%s' | Reason='%s'", e.partName, s)
+	return fmt.Sprintf("opc: %s: %s", e.partName, s)
 }

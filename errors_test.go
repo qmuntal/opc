@@ -47,7 +47,7 @@ func TestError_Error(t *testing.T) {
 		want      string
 		wantPanic bool
 	}{
-		{"base", &Error{101, "/doc.xml", ""}, "OPC: Part='/doc.xml' | Reason='a part name shall not be empty'", false},
+		{"base", &Error{101, "/doc.xml", ""}, "opc: /doc.xml: a part name shall not be empty", false},
 		{"panic", &Error{0, "/doc.xml", ""}, "", true},
 	}
 	for _, tt := range tests {
