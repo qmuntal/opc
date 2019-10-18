@@ -9,8 +9,8 @@ package opc
 
 import (
 	"encoding/xml"
-	"io"
 	"fmt"
+	"io"
 	"mime"
 	"path/filepath"
 	"sort"
@@ -276,7 +276,7 @@ func (c *CoreProperties) encode(w io.Writer) error {
 func decodeCoreProperties(r io.Reader) (*CoreProperties, error) {
 	propDecode := new(corePropertiesXMLUnmarshal)
 	if err := xml.NewDecoder(r).Decode(propDecode); err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be decoded: %w", contentTypesName, err)
+		return nil, fmt.Errorf("opc: %s: cannot be decoded: %v", contentTypesName, err)
 	}
 	prop := &CoreProperties{Category: propDecode.Category, ContentStatus: propDecode.ContentStatus,
 		Created: propDecode.Created, Creator: propDecode.Creator, Description: propDecode.Description,

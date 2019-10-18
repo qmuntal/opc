@@ -160,7 +160,7 @@ func encodeRelationships(w io.Writer, rs []*Relationship) error {
 func decodeRelationships(r io.Reader, partName string) ([]*Relationship, error) {
 	relDecode := new(relationshipsXML)
 	if err := xml.NewDecoder(r).Decode(relDecode); err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be decoded: %w", partName, err)
+		return nil, fmt.Errorf("opc: %s: cannot be decoded: %v", partName, err)
 	}
 	rel := make([]*Relationship, len(relDecode.RelsXML))
 	for i, rl := range relDecode.RelsXML {

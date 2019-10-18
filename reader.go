@@ -157,7 +157,7 @@ func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.4
 	reader, err := file.Open()
 	if err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be opened: %w", contentTypesName, err)
+		return nil, fmt.Errorf("opc: %s: cannot be opened: %v", contentTypesName, err)
 	}
 	return decodeContentTypes(reader)
 }
@@ -165,7 +165,7 @@ func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
 func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
 	reader, err := file.Open()
 	if err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be opened: %w", r.Properties.PartName, err)
+		return nil, fmt.Errorf("opc: %s: cannot be opened: %v", r.Properties.PartName, err)
 	}
 	return decodeCoreProperties(reader)
 }
@@ -173,7 +173,7 @@ func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
 func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 	reader, err := file.Open()
 	if err != nil {
-		return fmt.Errorf("opc: %s: cannot be opened: %w", file.Name(), err)
+		return fmt.Errorf("opc: %s: cannot be opened: %v", file.Name(), err)
 	}
 	rls, err := decodeRelationships(reader, file.Name())
 	if err != nil {
@@ -190,7 +190,7 @@ func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 func (r *Reader) loadPackageRelationships(file archiveFile) error {
 	reader, err := file.Open()
 	if err != nil {
-		return fmt.Errorf("opc: %s: cannot be opened: %w", file.Name(), err)
+		return fmt.Errorf("opc: %s: cannot be opened: %v", file.Name(), err)
 	}
 	rls, err := decodeRelationships(reader, file.Name())
 	if err != nil {
@@ -237,7 +237,7 @@ func (m *mixed) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 	ctdecode := new(contentTypesXMLReader)
 	if err := xml.NewDecoder(r).Decode(ctdecode); err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be decoded: %w", contentTypesName, err)
+		return nil, fmt.Errorf("opc: %s: cannot be decoded: %v", contentTypesName, err)
 	}
 	ct := new(contentTypes)
 	for _, c := range ctdecode.Types {
