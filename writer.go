@@ -38,7 +38,7 @@ type Writer struct {
 
 // NewWriter returns a new Writer writing an OPC file to w.
 func NewWriter(w io.Writer) *Writer {
-	return &Writer{p: newPackage(), w: zip.NewWriter(w), rnd: rand.New(rand.NewSource(time.Now().UnixNano()))}
+	return &Writer{p: newPackage(), w: zip.NewWriter(w), rnd: rand.New(rand.NewSource(42))}
 }
 
 // Flush flushes any buffered data to the underlying writer.
