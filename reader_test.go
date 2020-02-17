@@ -287,7 +287,9 @@ func Test_newReader_PartRelationships(t *testing.T) {
 		},
 	}
 	p3.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p3.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p3.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml", Relationships: []*Relationship{
+		{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
+	}}
 	p3.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p3.contentTypes.addDefault("xml", "application/xml")
 	p3.contentTypes.addDefault("png", "image/png")
@@ -318,7 +320,6 @@ func Test_newReader_PartRelationships(t *testing.T) {
 		want    *pkg
 		wantErr bool
 	}{
-
 		{"complexRelationships", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
@@ -337,6 +338,11 @@ func Test_newReader_PartRelationships(t *testing.T) {
 				nil,
 			),
 			newMockFile("files.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile(
+				"_rels/files.xml.rels",
+				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).withRel("rel-1", "text/txt", "/").String())),
+				nil,
+			),
 			newMockFile("pictures/photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, p3, false},
 

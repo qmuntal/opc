@@ -183,6 +183,7 @@ func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 	// get part name from rels part
 	path := strings.Replace(filepath.Dir(filepath.Dir(file.Name())), `\`, "/", -1)
 	pname := "/" + path + "/" + strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
+	pname = NormalizePartName(pname)
 	rels.addRelationship(pname, rls)
 	return nil
 }
