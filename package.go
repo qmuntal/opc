@@ -86,8 +86,10 @@ func (p *pkg) checkPrefixCollision(uri string) bool {
 }
 
 func (p *pkg) encodeContentTypes(w io.Writer) error {
-	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
-	return xml.NewEncoder(w).Encode(p.contentTypes.toXML())
+	w.Write(([]byte)(xml.Header))
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "    ")
+	return enc.Encode(p.contentTypes.toXML())
 }
 
 func (p *pkg) checkStringsPrefixCollision(s1, s2 string) bool {
@@ -259,8 +261,10 @@ type CoreProperties struct {
 }
 
 func (c *CoreProperties) encode(w io.Writer) error {
-	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
-	return xml.NewEncoder(w).Encode(&corePropertiesXMLMarshal{
+	w.Write(([]byte)(xml.Header))
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "    ")
+	return enc.Encode(&corePropertiesXMLMarshal{
 		xml.Name{Local: "coreProperties"},
 		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
 		"http://purl.org/dc/terms/",

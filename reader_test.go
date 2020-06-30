@@ -157,17 +157,17 @@ func Test_newReader_File(t *testing.T) {
 func Test_newReader_ContentType(t *testing.T) {
 	invalidType := `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Fake Extension="" ContentType=""/>
+    <Fake Extension="" ContentType=""/>
 </Types>`
 
 	incorrectOverrideXML := `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
+    <Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
 </Types>`
 
 	incorrectDefaultXML := `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Default ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
+    <Default ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml">
 </Types>`
 
 	p := newPackage()

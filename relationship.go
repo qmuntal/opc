@@ -149,12 +149,14 @@ func validateRelationships(sourceURI string, rs []*Relationship) error {
 }
 
 func encodeRelationships(w io.Writer, rs []*Relationship) error {
-	w.Write(([]byte)(`<?xml version="1.0" encoding="UTF-8"?>`))
 	re := &relationshipsXML{XML: "http://schemas.openxmlformats.org/package/2006/relationships"}
 	for _, r := range rs {
 		re.RelsXML = append(re.RelsXML, r.toXML())
 	}
-	return xml.NewEncoder(w).Encode(re)
+	w.Write(([]byte)(xml.Header))
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "    ")
+	return enc.Encode(re)
 }
 
 func decodeRelationships(r io.Reader, partName string) ([]*Relationship, error) {

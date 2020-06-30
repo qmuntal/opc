@@ -91,9 +91,15 @@ func Test_encodeRelationships(t *testing.T) {
 }
 
 func expectedsolution() string {
-	return `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="fakeId" Type="asd" Target="/fakeTarget"></Relationship></Relationships>`
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="fakeId" Type="asd" Target="/fakeTarget"></Relationship>
+</Relationships>`
 }
 
 func expectedsolution2() string {
-	return `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="fakeId" Type="asd" Target="fakeTarget" TargetMode="External"></Relationship></Relationships>`
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="fakeId" Type="asd" Target="fakeTarget" TargetMode="External"></Relationship>
+</Relationships>`
 }
