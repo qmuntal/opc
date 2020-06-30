@@ -90,7 +90,7 @@ func TestPackage_add(t *testing.T) {
 }
 
 func buildCoreString(content string) string {
-	s := `<?xml version="1.0" encoding="UTF-8"?>`
+	s := `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
 	s += `<coreProperties xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"`
 	s += ` xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">`
 	return s + content + "</coreProperties>"
@@ -104,9 +104,28 @@ func TestCoreProperties_encode(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", &CoreProperties{}, buildCoreString(""), false},
-		{"some", &CoreProperties{Category: "A", LastPrinted: "b"}, buildCoreString("<category>A</category><lastPrinted>b</lastPrinted>"), false},
+		{"some", &CoreProperties{Category: "A", LastPrinted: "b"}, buildCoreString(`
+    <category>A</category>
+    <lastPrinted>b</lastPrinted>
+`), false},
 		{"all", &CoreProperties{"partName", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
-			buildCoreString("<category>a</category><contentStatus>b</contentStatus><dcterms:created>c</dcterms:created><dc:creator>d</dc:creator><dc:description>e</dc:description><dc:identifier>f</dc:identifier><keywords>g</keywords><dc:language>h</dc:language><lastModifiedBy>i</lastModifiedBy><lastPrinted>j</lastPrinted><dcterms:modified>k</dcterms:modified><revision>l</revision><dc:subject>m</dc:subject><dc:title>n</dc:title><version>o</version>"),
+			buildCoreString(`
+    <category>a</category>
+    <contentStatus>b</contentStatus>
+    <dcterms:created>c</dcterms:created>
+    <dc:creator>d</dc:creator>
+    <dc:description>e</dc:description>
+    <dc:identifier>f</dc:identifier>
+    <keywords>g</keywords>
+    <dc:language>h</dc:language>
+    <lastModifiedBy>i</lastModifiedBy>
+    <lastPrinted>j</lastPrinted>
+    <dcterms:modified>k</dcterms:modified>
+    <revision>l</revision>
+    <dc:subject>m</dc:subject>
+    <dc:title>n</dc:title>
+    <version>o</version>
+`),
 			false},
 	}
 	for _, tt := range tests {
