@@ -118,8 +118,8 @@ func TestWriter_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "application/xml"}, false},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{"a.xml", "a/b"}, true},
-		{"base", NewWriter(&bytes.Buffer{}), args{"/a.xml", "a/b"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
