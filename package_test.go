@@ -92,7 +92,8 @@ func TestPackage_add(t *testing.T) {
 func buildCoreString(content string) string {
 	s := `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
 	s += `<coreProperties xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"`
-	s += ` xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">`
+	s += ` xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/"`
+	s += ` xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`
 	return s + content + "</coreProperties>"
 }
 
@@ -106,21 +107,21 @@ func TestCoreProperties_encode(t *testing.T) {
 		{"empty", &CoreProperties{}, buildCoreString(""), false},
 		{"some", &CoreProperties{Category: "A", LastPrinted: "b"}, buildCoreString(`
     <category>A</category>
-    <lastPrinted>b</lastPrinted>
+    <lastPrinted xsi:type="dcterms:W3CDTF">b</lastPrinted>
 `), false},
 		{"all", &CoreProperties{"partName", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
 			buildCoreString(`
     <category>a</category>
     <contentStatus>b</contentStatus>
-    <dcterms:created>c</dcterms:created>
+    <dcterms:created xsi:type="dcterms:W3CDTF">c</dcterms:created>
     <dc:creator>d</dc:creator>
     <dc:description>e</dc:description>
     <dc:identifier>f</dc:identifier>
     <keywords>g</keywords>
     <dc:language>h</dc:language>
     <lastModifiedBy>i</lastModifiedBy>
-    <lastPrinted>j</lastPrinted>
-    <dcterms:modified>k</dcterms:modified>
+    <lastPrinted xsi:type="dcterms:W3CDTF">j</lastPrinted>
+    <dcterms:modified xsi:type="dcterms:W3CDTF">k</dcterms:modified>
     <revision>l</revision>
     <dc:subject>m</dc:subject>
     <dc:title>n</dc:title>

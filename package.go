@@ -197,25 +197,26 @@ func (c *contentTypes) findType(name string) (string, error) {
 }
 
 type corePropertiesXMLMarshal struct {
-	XMLName        xml.Name `xml:"coreProperties"`
-	XML            string   `xml:"xmlns,attr"`
-	XMLDCTERMS     string   `xml:"xmlns:dcterms,attr"`
-	XMLDC          string   `xml:"xmlns:dc,attr"`
-	Category       string   `xml:"category,omitempty"`
-	ContentStatus  string   `xml:"contentStatus,omitempty"`
-	Created        string   `xml:"dcterms:created,omitempty"`
-	Creator        string   `xml:"dc:creator,omitempty"`
-	Description    string   `xml:"dc:description,omitempty"`
-	Identifier     string   `xml:"dc:identifier,omitempty"`
-	Keywords       string   `xml:"keywords,omitempty"`
-	Language       string   `xml:"dc:language,omitempty"`
-	LastModifiedBy string   `xml:"lastModifiedBy,omitempty"`
-	LastPrinted    string   `xml:"lastPrinted,omitempty"`
-	Modified       string   `xml:"dcterms:modified,omitempty"`
-	Revision       string   `xml:"revision,omitempty"`
-	Subject        string   `xml:"dc:subject,omitempty"`
-	Title          string   `xml:"dc:title,omitempty"`
-	Version        string   `xml:"version,omitempty"`
+	XMLName        xml.Name    `xml:"coreProperties"`
+	XML            string      `xml:"xmlns,attr"`
+	XMLDCTERMS     string      `xml:"xmlns:dcterms,attr"`
+	XMLDC          string      `xml:"xmlns:dc,attr"`
+	XMLXSI         string      `xml:"xmlns:xsi,attr"`
+	Category       string      `xml:"category,omitempty"`
+	ContentStatus  string      `xml:"contentStatus,omitempty"`
+	Created        w3CDateTime `xml:"dcterms:created,omitempty"`
+	Creator        string      `xml:"dc:creator,omitempty"`
+	Description    string      `xml:"dc:description,omitempty"`
+	Identifier     string      `xml:"dc:identifier,omitempty"`
+	Keywords       string      `xml:"keywords,omitempty"`
+	Language       string      `xml:"dc:language,omitempty"`
+	LastModifiedBy string      `xml:"lastModifiedBy,omitempty"`
+	LastPrinted    w3CDateTime `xml:"lastPrinted,omitempty"`
+	Modified       w3CDateTime `xml:"dcterms:modified,omitempty"`
+	Revision       string      `xml:"revision,omitempty"`
+	Subject        string      `xml:"dc:subject,omitempty"`
+	Title          string      `xml:"dc:title,omitempty"`
+	Version        string      `xml:"version,omitempty"`
 }
 
 type corePropertiesXMLUnmarshal struct {
@@ -238,6 +239,16 @@ type corePropertiesXMLUnmarshal struct {
 	Subject        string   `xml:"subject,omitempty"`
 	Title          string   `xml:"title,omitempty"`
 	Version        string   `xml:"version,omitempty"`
+}
+
+type w3CDateTime string
+
+func (s w3CDateTime) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	type xmlType struct {
+		XSITYPE string `xml:"xsi:type,attr"`
+		Value   string `xml:",chardata"`
+	}
+	return e.EncodeElement(xmlType{"dcterms:W3CDTF", string(s)}, start)
 }
 
 // CoreProperties enable users to get and set well-known and common sets of property metadata within packages.
@@ -269,10 +280,11 @@ func (c *CoreProperties) encode(w io.Writer) error {
 		"http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
 		"http://purl.org/dc/terms/",
 		"http://purl.org/dc/elements/1.1/",
-		c.Category, c.ContentStatus, c.Created,
+		"http://www.w3.org/2001/XMLSchema-instance",
+		c.Category, c.ContentStatus, w3CDateTime(c.Created),
 		c.Creator, c.Description, c.Identifier,
 		c.Keywords, c.Language, c.LastModifiedBy,
-		c.LastPrinted, c.Modified, c.Revision,
+		w3CDateTime(c.LastPrinted), w3CDateTime(c.Modified), c.Revision,
 		c.Subject, c.Title, c.Version,
 	})
 }
