@@ -38,7 +38,16 @@ type Writer struct {
 
 // NewWriter returns a new Writer writing an OPC file to w.
 func NewWriter(w io.Writer) *Writer {
-	return &Writer{p: newPackage(), w: zip.NewWriter(w), rnd: rand.New(rand.NewSource(42))}
+	return &Writer{p: &pkg{
+		parts: make(map[string]*Part, 0),
+		contentTypes: contentTypes{
+			defaults: map[string]string{
+				"xml":  "application/xml",
+				"rels": relationshipContentType,
+			},
+			overrides: map[string]string{},
+		},
+	}, w: zip.NewWriter(w), rnd: rand.New(rand.NewSource(42))}
 }
 
 // Flush flushes any buffered data to the underlying writer.
@@ -78,8 +87,7 @@ func (w *Writer) Close() error {
 // This returns a Writer to which the file contents should be written.
 // The file's contents must be written to the io.Writer before the next call to Create, CreatePart, or Close.
 func (w *Writer) Create(name, contentType string) (io.Writer, error) {
-	part := &Part{Name: name, ContentType: contentType}
-	return w.add(part, CompressionNormal)
+	return w.CreatePart(&Part{Name: name, ContentType: contentType}, CompressionNone)
 }
 
 // CreatePart adds a file to the OPC archive using the provided part.
@@ -113,7 +121,7 @@ func (w *Writer) createCoreProperties() error {
 
 func (w *Writer) createContentTypes() error {
 	// ISO/IEC 29500-2 M3.10
-	cw, err := w.addToPackage(&Part{Name: contentTypesName, ContentType: "text/xml"}, CompressionNormal)
+	cw, err := w.addToPackage(&Part{Name: contentTypesName, ContentType: "application/xml"}, CompressionNormal)
 	if err != nil {
 		return err
 	}
