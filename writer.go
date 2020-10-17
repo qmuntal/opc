@@ -115,7 +115,8 @@ func (w *Writer) createCoreProperties() error {
 	if err != nil {
 		return err
 	}
-	w.Relationships = append(w.Relationships, &Relationship{"", corePropsRel, part.Name, ModeInternal})
+	w.Relationships = append(w.Relationships,
+		&Relationship{w.Properties.PartName, corePropsRel, part.Name, ModeInternal})
 	return w.Properties.encode(cw)
 }
 

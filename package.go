@@ -146,7 +146,7 @@ func (c *contentTypes) ensureOverridesMap() {
 	}
 }
 
-// Add needs a valid content type, else the behaviour is undefined
+// Add needs a valid content type, else the behavior is undefined
 func (c *contentTypes) add(partName, contentType string) error {
 	// Process descrived in ISO/IEC 29500-2 §10.1.2.3
 	t, params, _ := mime.ParseMediaType(contentType)
@@ -253,7 +253,8 @@ func (s w3CDateTime) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 // CoreProperties enable users to get and set well-known and common sets of property metadata within packages.
 type CoreProperties struct {
-	PartName       string // Won't be writed to the package, only used to indicate the location of the CoreProperties part. If empty the default location is "/props/core.xml".
+	PartName       string // Won't be written to the package, only used to indicate the location of the CoreProperties part. If empty the default location is "/props/core.xml".
+	RelationshipID string // Won't be written to the package, only used to indicate the relationship ID for target "/props/core.xml".
 	Category       string // A categorization of the content of this package.
 	ContentStatus  string // The status of the content.
 	Created        string // Date of creation of the resource.
