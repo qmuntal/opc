@@ -53,6 +53,7 @@ func TestWriter_Close(t *testing.T) {
 		{"withDuplicatedRels", &Writer{p: pRel, w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, true},
 		{"withCoreProps", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song"}, rnd: fakeRand()}, false},
 		{"withCorePropsWithName", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song", PartName: "/props.xml"}, rnd: fakeRand()}, false},
+		{"withCorePropsWithNameAndId", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Properties: CoreProperties{Title: "Song", PartName: "/docProps/props.xml", RelationshipID: "rId1"}, rnd: fakeRand()}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

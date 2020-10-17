@@ -109,7 +109,7 @@ func TestCoreProperties_encode(t *testing.T) {
     <category>A</category>
     <lastPrinted xsi:type="dcterms:W3CDTF">b</lastPrinted>
 `), false},
-		{"all", &CoreProperties{"partName", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
+		{"all", &CoreProperties{"partName", "rId1", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
 			buildCoreString(`
     <category>a</category>
     <contentStatus>b</contentStatus>
