@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -156,7 +157,7 @@ func (w *Writer) createLastPartRelationships() error {
 	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
 		return err
 	}
-	dirName := filepath.Dir(w.last.Name)[1:]
+	dirName := strings.Replace(filepath.Dir(w.last.Name), "\\", "/", -1)[1:]
 	if dirName != "" {
 		dirName = "/" + dirName
 	}
