@@ -107,11 +107,10 @@ func (r *Reader) loadPackage() error {
 			continue
 		}
 		if strings.EqualFold(fileName, ResolveRelationship("/", r.Properties.PartName)) {
-			cp, err := r.loadCoreProperties(file)
+			err := r.loadCoreProperties(file)
 			if err != nil {
 				return err
 			}
-			r.Properties = *cp
 		} else {
 			cType, err := ct.findType(fileName)
 			if err != nil {
@@ -162,12 +161,12 @@ func (r *Reader) loadContentType(file archiveFile) (*contentTypes, error) {
 	return decodeContentTypes(reader)
 }
 
-func (r *Reader) loadCoreProperties(file archiveFile) (*CoreProperties, error) {
+func (r *Reader) loadCoreProperties(file archiveFile) error {
 	reader, err := file.Open()
 	if err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be opened: %v", r.Properties.PartName, err)
+		return fmt.Errorf("opc: %s: cannot be opened: %v", r.Properties.PartName, err)
 	}
-	return decodeCoreProperties(reader)
+	return decodeCoreProperties(reader, &r.Properties)
 }
 
 func loadRelationships(file archiveFile, rels *relationshipsPart) error {
@@ -201,6 +200,7 @@ func (r *Reader) loadPackageRelationships(file archiveFile) error {
 	for _, rel := range rls {
 		if strings.EqualFold(rel.Type, corePropsRel) {
 			r.Properties.PartName = rel.TargetURI
+			r.Properties.RelationshipID = rel.ID
 			break
 		}
 	}

@@ -290,16 +290,25 @@ func (c *CoreProperties) encode(w io.Writer) error {
 	})
 }
 
-func decodeCoreProperties(r io.Reader) (*CoreProperties, error) {
+func decodeCoreProperties(r io.Reader, props *CoreProperties) error {
 	propDecode := new(corePropertiesXMLUnmarshal)
 	if err := xml.NewDecoder(r).Decode(propDecode); err != nil {
-		return nil, fmt.Errorf("opc: %s: cannot be decoded: %v", contentTypesName, err)
+		return fmt.Errorf("opc: %s: cannot be decoded: %v", contentTypesName, err)
 	}
-	prop := &CoreProperties{Category: propDecode.Category, ContentStatus: propDecode.ContentStatus,
-		Created: propDecode.Created, Creator: propDecode.Creator, Description: propDecode.Description,
-		Identifier: propDecode.Identifier, Keywords: propDecode.Keywords, Language: propDecode.Language,
-		LastModifiedBy: propDecode.LastModifiedBy, LastPrinted: propDecode.LastPrinted, Modified: propDecode.Modified,
-		Revision: propDecode.Revision, Subject: propDecode.Subject, Title: propDecode.Title, Version: propDecode.Version}
-
-	return prop, nil
+	props.Category = propDecode.Category
+	props.ContentStatus = propDecode.ContentStatus
+	props.Created = propDecode.Created
+	props.Creator = propDecode.Creator
+	props.Description = propDecode.Description
+	props.Identifier = propDecode.Identifier
+	props.Keywords = propDecode.Keywords
+	props.Language = propDecode.Language
+	props.LastModifiedBy = propDecode.LastModifiedBy
+	props.LastPrinted = propDecode.LastPrinted
+	props.Modified = propDecode.Modified
+	props.Revision = propDecode.Revision
+	props.Subject = propDecode.Subject
+	props.Title = propDecode.Title
+	props.Version = propDecode.Version
+	return nil
 }

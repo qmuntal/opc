@@ -413,7 +413,7 @@ func Test_newReader_CoreProperties(t *testing.T) {
 	<dcterms:modified xsi:type="dcterms:W3CDTF">2019-01-24T19:58:26Z</dcterms:modified>
 	</cp:coreProperties>`
 
-	cp := &CoreProperties{Created: "2015-06-05T18:19:34Z", Modified: "2019-01-24T19:58:26Z"}
+	cp := &CoreProperties{PartName: "docProps/core.xml", RelationshipID: "rId2", Created: "2015-06-05T18:19:34Z", Modified: "2019-01-24T19:58:26Z"}
 
 	tests := []struct {
 		name    string
@@ -655,6 +655,7 @@ func TestOpenReader(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"office", args{"testdata/office.docx"}, false},
 		{"extensioncustom", args{"testdata/extensioncustom.3mf"}, false},
 		{"overridecustom", args{"testdata/overridecustom.3mf"}, false},
 		{"overridepositive", args{"testdata/overridepositive.3mf"}, false},
