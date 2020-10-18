@@ -42,6 +42,7 @@ func TestRelationship_validate(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"relative", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "./two/two.txt", TargetMode: ModeExternal}, args{"/one.txt"}, false},
 		{"new", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "fakeTarget", TargetMode: ModeExternal}, args{""}, false},
 		{"abs", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "http://a.com/b", TargetMode: ModeExternal}, args{""}, false},
 		{"internalRelRel", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "/_rels/.rels", TargetMode: ModeInternal}, args{"/"}, true},
@@ -53,6 +54,7 @@ func TestRelationship_validate(t *testing.T) {
 		{"invalidTarget", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "", TargetMode: ModeInternal}, args{""}, true},
 		{"invalidRel1", &Relationship{ID: "fakeId", Type: "", TargetURI: "fakeTarget", TargetMode: ModeInternal}, args{""}, true},
 		{"invalidRel2", &Relationship{ID: "fakeId", Type: " ", TargetURI: "fakeTarget", TargetMode: ModeInternal}, args{""}, true},
+		{"invalidRel2", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "./fakeTarget", TargetMode: ModeInternal}, args{""}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -93,7 +95,7 @@ func Test_encodeRelationships(t *testing.T) {
 func expectedsolution() string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-    <Relationship Id="fakeId" Type="asd" Target="/fakeTarget"></Relationship>
+    <Relationship Id="fakeId" Type="asd" Target="fakeTarget"></Relationship>
 </Relationships>`
 }
 

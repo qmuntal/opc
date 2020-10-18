@@ -36,11 +36,16 @@ var defaultRef, _ = url.Parse("http://defaultcontainer/")
 // The source can be a valid part URI, for part relationships, or "/", for package relationships.
 func ResolveRelationship(source string, rel string) string {
 	if source == "/" || source == "\\" {
-		return "/" + rel
+		if strings.HasPrefix(rel, "\\") {
+			rel = rel[1:]
+		}
+		if !strings.HasPrefix(rel, "/") {
+			rel = "/" + rel
+		}
 	}
 	if !strings.HasPrefix(rel, "/") && !strings.HasPrefix(rel, "\\") {
 		sourceDir := strings.Replace(filepath.Dir(source), "\\", "/", -1)
-		return fmt.Sprintf("%s/%s", sourceDir, rel)
+		rel = fmt.Sprintf("%s/%s", sourceDir, rel)
 	}
 	return rel
 }

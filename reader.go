@@ -106,7 +106,7 @@ func (r *Reader) loadPackage() error {
 		if strings.EqualFold(fileName, contentTypesName) || isRelationshipURI(fileName) || strings.HasSuffix(fileName, "/") {
 			continue
 		}
-		if strings.EqualFold(fileName, r.Properties.PartName) {
+		if strings.EqualFold(fileName, ResolveRelationship("/", r.Properties.PartName)) {
 			cp, err := r.loadCoreProperties(file)
 			if err != nil {
 				return err
