@@ -413,7 +413,7 @@ func Test_newReader_CoreProperties(t *testing.T) {
 	<dcterms:modified xsi:type="dcterms:W3CDTF">2019-01-24T19:58:26Z</dcterms:modified>
 	</cp:coreProperties>`
 
-	cp := &CoreProperties{Created: "2015-06-05T18:19:34Z", Modified: "2019-01-24T19:58:26Z"}
+	cp := &CoreProperties{PartName: "docProps/core.xml", RelationshipID: "rId2", Created: "2015-06-05T18:19:34Z", Modified: "2019-01-24T19:58:26Z"}
 
 	tests := []struct {
 		name    string
@@ -425,12 +425,17 @@ func Test_newReader_CoreProperties(t *testing.T) {
 		{"base", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").
+					withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
 				nil,
 			),
 			newMockFile(
 				"_rels/.rels",
-				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).
+					withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").
+					withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").
+					withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
 				nil,
 			),
 			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString(coreFile)), nil),
@@ -439,12 +444,17 @@ func Test_newReader_CoreProperties(t *testing.T) {
 		{"decodeError", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").
+					withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
 				nil,
 			),
 			newMockFile(
 				"_rels/.rels",
-				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).
+					withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").
+					withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").
+					withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
 				nil,
 			),
 			newMockFile("docProps/core.xml", ioutil.NopCloser(bytes.NewBufferString("{a : 2}")), nil),
@@ -453,12 +463,17 @@ func Test_newReader_CoreProperties(t *testing.T) {
 		{"openError", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").
+					withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
 				nil,
 			),
 			newMockFile(
 				"_rels/.rels",
-				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(relsBuilder).
+					withRel("rId3", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml").
+					withRel("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml").
+					withRel("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "xl/workbook.xml").String())),
 				nil,
 			),
 			newMockFile("docProps/core.xml", ioutil.NopCloser(nil), errors.New("")),
@@ -492,8 +507,8 @@ func Test_newReader_PackageRelationships(t *testing.T) {
 
 	r := []*Relationship{
 		{ID: "rId3", Type: "http://www.custom.com/external-resource", TargetURI: "http://www.custom.com/images/pic1.jpg", TargetMode: ModeExternal},
-		{ID: "rId2", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", TargetURI: "/DOCPROPS/app.xml", TargetMode: ModeInternal},
-		{ID: "rId1", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", TargetURI: "/xl/workbook.xml", TargetMode: ModeInternal},
+		{ID: "rId2", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", TargetURI: "DOCPROPS/app.xml", TargetMode: ModeInternal},
+		{ID: "rId1", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", TargetURI: "xl/workbook.xml", TargetMode: ModeInternal},
 		{ID: "rId4", Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", TargetURI: "./xl/other.xml", TargetMode: ModeInternal},
 	}
 	tests := []struct {
@@ -505,7 +520,9 @@ func Test_newReader_PackageRelationships(t *testing.T) {
 		{"base", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml").
+					withOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml").String())),
 				nil,
 			),
 			newMockFile("_rels/.rels", ioutil.NopCloser(bytes.NewBufferString(validPackageRelationships)), nil),
@@ -516,7 +533,9 @@ func Test_newReader_PackageRelationships(t *testing.T) {
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/APP.xml").withDefault("image/png", "png").withDefault("application/xml", "xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/APP.xml").
+					withDefault("image/png", "png").withDefault("application/xml", "xml").String())),
 				nil,
 			),
 			newMockFile("_rels/.rels", ioutil.NopCloser(nil), errors.New("")),
@@ -525,7 +544,9 @@ func Test_newReader_PackageRelationships(t *testing.T) {
 		{"decodeMalformedXMLPackage", []archiveFile{
 			newMockFile(
 				"[Content_Types].xml",
-				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/APP.xml").withDefault("image/png", "png").withDefault("application/xml", "xml").String())),
+				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).
+					withOverride("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/APP.xml").
+					withDefault("image/png", "png").withDefault("application/xml", "xml").String())),
 				nil,
 			),
 			newMockFile("docProps/app.xml", ioutil.NopCloser(bytes.NewBufferString("")), nil),
@@ -634,6 +655,7 @@ func TestOpenReader(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"office", args{"testdata/office.docx"}, false},
 		{"extensioncustom", args{"testdata/extensioncustom.3mf"}, false},
 		{"overridecustom", args{"testdata/overridecustom.3mf"}, false},
 		{"overridepositive", args{"testdata/overridepositive.3mf"}, false},

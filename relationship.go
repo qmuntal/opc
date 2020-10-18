@@ -70,20 +70,11 @@ func (r *Relationship) validate(sourceURI string) error {
 	return r.validateRelationshipTarget(sourceURI)
 }
 
-func (r *Relationship) normalizeTargetURI() {
-	if r.TargetMode == ModeInternal {
-		if !strings.HasPrefix(r.TargetURI, "/") && !strings.HasPrefix(r.TargetURI, "\\") && !strings.HasPrefix(r.TargetURI, ".") {
-			r.TargetURI = "/" + r.TargetURI
-		}
-	}
-}
-
 func (r *Relationship) toXML() *relationshipXML {
 	var targetMode string
 	if r.TargetMode == ModeExternal {
 		targetMode = externalMode
 	}
-	r.normalizeTargetURI()
 	x := &relationshipXML{ID: r.ID, RelType: r.Type, TargetURI: r.TargetURI, Mode: targetMode}
 	return x
 }
@@ -118,14 +109,14 @@ func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
 	}
 
 	// ISO/IEC 29500-2 M1.29
-	if r.TargetMode == ModeInternal && uri.IsAbs() {
-		return newErrorRelationship(129, sourceURI, r.ID)
-	}
-
-	if r.TargetMode != ModeExternal && !uri.IsAbs() {
-		source, err := url.Parse(strings.TrimSpace(sourceURI))
-		if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
-			return newErrorRelationship(125, sourceURI, r.ID)
+	if r.TargetMode == ModeInternal {
+		if uri.IsAbs() {
+			return newErrorRelationship(129, sourceURI, r.ID)
+		} else {
+			source, err := url.Parse(strings.TrimSpace(sourceURI))
+			if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
+				return newErrorRelationship(125, sourceURI, r.ID)
+			}
 		}
 	}
 
@@ -172,7 +163,6 @@ func decodeRelationships(r io.Reader, partName string) ([]*Relationship, error) 
 		} else {
 			newRel.TargetMode = ModeExternal
 		}
-		newRel.normalizeTargetURI()
 		rel[i] = newRel
 	}
 	return rel, nil

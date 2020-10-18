@@ -112,12 +112,25 @@ func (w *Writer) createCoreProperties() error {
 		partName = corePropsDefaultName
 	}
 	part := &Part{Name: partName, ContentType: corePropsContentType}
+	if !strings.HasPrefix(partName, "/") {
+		part.Name = "/" + partName
+	}
 	cw, err := w.addToPackage(part, CompressionNormal)
 	if err != nil {
 		return err
 	}
-	w.Relationships = append(w.Relationships,
-		&Relationship{w.Properties.RelationshipID, corePropsRel, part.Name, ModeInternal})
+	var hasCoreRel bool
+	for _, rel := range w.Relationships {
+		if strings.EqualFold(rel.Type, corePropsRel) {
+			hasCoreRel = true
+			break
+		}
+	}
+	if !hasCoreRel {
+		w.Relationships = append(w.Relationships, &Relationship{
+			w.Properties.RelationshipID, corePropsRel, partName, ModeInternal,
+		})
+	}
 	return w.Properties.encode(cw)
 }
 

@@ -112,7 +112,9 @@ func TestResolveRelationship(t *testing.T) {
 		want string
 	}{
 		{"package", args{"/", "c.xml"}, "/c.xml"},
+		{"packageWithSlash", args{"/", "/c.xml"}, "/c.xml"},
 		{"packageWin", args{"\\", "c.xml"}, "/c.xml"},
+		{"packageWinWithSlash", args{"\\", "\\c.xml"}, "/c.xml"},
 		{"rel", args{"/3D/3dmodel.model", "c.xml"}, "/3D/c.xml"},
 		{"rel", args{"/3D/3dmodel.model", "/3D/box1.model"}, "/3D/box1.model"},
 		{"rel", args{"/3D/box3.model", "/2D/2dmodel.model"}, "/2D/2dmodel.model"},
