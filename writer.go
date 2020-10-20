@@ -53,7 +53,7 @@ func NewWriter(w io.Writer) *Writer {
 // and with its content initialized with r.
 // Parts comming from r cannot be modified but new parts can be appended
 // and package core properties and relationships can be updated.
-func NewWriterFromReader(w io.Writer, r Reader) (*Writer, error) {
+func NewWriterFromReader(w io.Writer, r *Reader) (*Writer, error) {
 	ow := NewWriter(w)
 	for _, p := range r.Files {
 		pw, err := ow.CreatePart(p.Part, CompressionNormal)
@@ -67,7 +67,10 @@ func NewWriterFromReader(w io.Writer, r Reader) (*Writer, error) {
 		io.Copy(pw, rc)
 	}
 	ow.Properties = r.Properties
-	copy(ow.Relationships, r.Relationships)
+	ow.Relationships = make([]*Relationship, len(r.Relationships))
+	for i, rel := range r.Relationships {
+		ow.Relationships[i] = &(*rel)
+	}
 	return ow, nil
 }
 

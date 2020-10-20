@@ -59,3 +59,34 @@ func ExampleReader() {
 		fmt.Println()
 	}
 }
+
+func ExampleNewWriterFromReader() {
+	r, err := opc.OpenReader("testdata/component.3mf")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer r.Close()
+
+	buf := new(bytes.Buffer)
+	w, err := opc.NewWriterFromReader(buf, r.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	name := opc.NormalizePartName("docs\\readme.txt")
+	part, err := w.Create(name, "text/plain")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write content to the part.
+	_, err = part.Write([]byte("This archive contains some text files."))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Make sure to check the error on Close.
+	if err := w.Close(); err != nil {
+		log.Fatal(err)
+	}
+}
+
