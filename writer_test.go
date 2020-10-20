@@ -194,3 +194,24 @@ func TestWriter_createLastPartRelationships(t *testing.T) {
 		})
 	}
 }
+
+func TestNewWriterFromReader(t *testing.T) {
+	r, err := OpenReader("testdata/office.docx")
+	if err != nil {
+		t.Fatalf("failed to open test file: %v", err)
+	}
+	var buf bytes.Buffer
+	w, err := NewWriterFromReader(&buf, r.Reader)
+	if err != nil {
+		t.Fatalf("NewWriterFromReader() error: %v", err)
+	}
+	if w.Properties != r.Properties {
+		t.Error("NewWriterFromReader() haven't copied core properties")
+	}
+	if len(w.Relationships) != len(r.Relationships) {
+		t.Error("NewWriterFromReader() haven't copied package relationships")
+	}
+	if err = w.Close(); err != nil {
+		t.Errorf("NewWriterFromReader() created package that cannot be closed: %v", err)
+	}
+}
