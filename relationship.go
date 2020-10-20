@@ -4,8 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -25,8 +25,8 @@ const externalMode = "External"
 const charBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
 
 // Relationship is used to express a relationship between a source and a target part.
-// If the ID is not specified a random string with 8 characters will be generated.
-// If The TargetMode is not specified the default value is Internal.
+// If the ID is not specified a unique ID will be generated following the pattern rIdN.
+// If the TargetMode is not specified the default value is Internal.
 // Defined in ISO/IEC 29500-2 §9.3.
 type Relationship struct {
 	ID         string     // The relationship identifier which shall conform the xsd:ID naming restrictions and unique within the part.
@@ -48,16 +48,22 @@ type relationshipXML struct {
 	Mode      string `xml:"TargetMode,attr,omitempty"`
 }
 
-func (r *Relationship) ensureID(rnd *rand.Rand) {
-	if r.ID != "" {
-		return
+func newRelationshipID(rels []*Relationship) string {
+	ids := make([]string, len(rels))
+	for i, rel := range rels {
+		ids[i] = rel.ID
 	}
-
-	b := make([]byte, 8)
-	for i := range b {
-		b[i] = charBytes[rnd.Intn(len(charBytes))]
+	sort.Strings(ids)
+	idFunc := func(i int) string { return fmt.Sprintf("rId%d", i) }
+	var (
+		i int
+		id = idFunc(0)
+	)
+	for sort.SearchStrings(ids, id) < 0 {
+		i++
+		id = idFunc(i)
 	}
-	r.ID = string(b)
+	return id
 }
 
 func (r *Relationship) validate(sourceURI string) error {

@@ -5,7 +5,6 @@ import (
 	"compress/flate"
 	"fmt"
 	"io"
-	"math/rand"
 	"path/filepath"
 	"strings"
 	"time"
@@ -34,7 +33,6 @@ type Writer struct {
 	p             *pkg
 	w             *zip.Writer
 	last          *Part
-	rnd           *rand.Rand
 }
 
 // NewWriter returns a new Writer writing an OPC file to w.
@@ -48,7 +46,7 @@ func NewWriter(w io.Writer) *Writer {
 			},
 			overrides: map[string]string{},
 		},
-	}, w: zip.NewWriter(w), rnd: rand.New(rand.NewSource(42))}
+	}, w: zip.NewWriter(w)}
 }
 
 // Flush flushes any buffered data to the underlying writer.
@@ -148,7 +146,9 @@ func (w *Writer) createOwnRelationships() error {
 		return nil
 	}
 	for _, r := range w.Relationships {
-		r.ensureID(w.rnd)
+		if r.ID == "" {
+			r.ID = newRelationshipID(w.Relationships)
+		}
 	}
 	if err := validateRelationships("/", w.Relationships); err != nil {
 		return err
@@ -165,7 +165,9 @@ func (w *Writer) createLastPartRelationships() error {
 		return nil
 	}
 	for _, r := range w.last.Relationships {
-		r.ensureID(w.rnd)
+		if r.ID == "" {
+			r.ID = newRelationshipID(w.Relationships)
+		}
 	}
 	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
 		return err
