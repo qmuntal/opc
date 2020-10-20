@@ -59,7 +59,7 @@ func newRelationshipID(rels []*Relationship) string {
 		i int
 		id = idFunc(0)
 	)
-	for sort.SearchStrings(ids, id) < 0 {
+	for sort.SearchStrings(ids, id) != len(ids) {
 		i++
 		id = idFunc(i)
 	}
