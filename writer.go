@@ -35,7 +35,7 @@ type Writer struct {
 	last          *Part
 }
 
-// NewWriter returns a new Writer writing an OPC file to w.
+// NewWriter returns a new Writer writing an OPC package to w.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{p: &pkg{
 		parts: make(map[string]*Part, 0),
@@ -47,6 +47,28 @@ func NewWriter(w io.Writer) *Writer {
 			overrides: map[string]string{},
 		},
 	}, w: zip.NewWriter(w)}
+}
+
+// NewWriterFromReader returns a new Writer writing an OPC package to w
+// and with its content initialized with r.
+// Parts comming from r cannot be modified but new parts can be appended
+// and package core properties and relationships can be updated.
+func NewWriterFromReader(w io.Writer, r Reader) (*Writer, error) {
+	ow := NewWriter(w)
+	for _, p := range r.Files {
+		pw, err := ow.CreatePart(p.Part, CompressionNormal)
+		if err != nil {
+			return nil, err
+		}
+		rc, err := p.Open()
+		if err != nil {
+			return nil, err
+		}
+		io.Copy(pw, rc)
+	}
+	ow.Properties = r.Properties
+	copy(ow.Relationships, r.Relationships)
+	return ow, nil
 }
 
 // Flush flushes any buffered data to the underlying writer.
