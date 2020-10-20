@@ -64,7 +64,11 @@ func NewWriterFromReader(w io.Writer, r *Reader) (*Writer, error) {
 		if err != nil {
 			return nil, err
 		}
-		io.Copy(pw, rc)
+		_, err = io.Copy(pw, rc)
+		rc.Close()
+		if err != nil {
+			return nil, err
+		}
 	}
 	ow.Properties = r.Properties
 	ow.Relationships = make([]*Relationship, len(r.Relationships))
