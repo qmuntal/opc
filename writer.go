@@ -195,7 +195,7 @@ func (w *Writer) createLastPartRelationships() error {
 	}
 	for _, r := range w.last.Relationships {
 		if r.ID == "" {
-			r.ID = newRelationshipID(w.Relationships)
+			r.ID = newRelationshipID(w.last.Relationships)
 		}
 	}
 	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
