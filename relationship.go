@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"sort"
 	"strings"
 )
 
@@ -53,17 +52,25 @@ func newRelationshipID(rels []*Relationship) string {
 	for i, rel := range rels {
 		ids[i] = rel.ID
 	}
-	sort.Strings(ids)
 	idFunc := func(i int) string { return fmt.Sprintf("rId%d", i) }
 	var (
-		i int
+		i  int
 		id = idFunc(0)
 	)
-	for sort.SearchStrings(ids, id) != len(ids) {
+	for isValueInList(id, ids) {
 		i++
 		id = idFunc(i)
 	}
 	return id
+}
+
+func isValueInList(value string, list []string) bool {
+	for _, v := range list {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Relationship) validate(sourceURI string) error {

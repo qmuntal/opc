@@ -89,4 +89,3 @@ func ExampleNewWriterFromReader() {
 		log.Fatal(err)
 	}
 }
-
