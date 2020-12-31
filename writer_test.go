@@ -147,6 +147,7 @@ func TestWriter_CreatePart(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"unicode", NewWriter(&bytes.Buffer{}), args{&Part{"/a/ц.xml", "a/b", nil}, CompressionNone}, false},
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
 		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},

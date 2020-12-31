@@ -5,7 +5,7 @@ import (
 	"compress/flate"
 	"fmt"
 	"io"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 )
@@ -51,7 +51,9 @@ func NewWriter(w io.Writer) *Writer {
 
 // NewWriterFromReader returns a new Writer writing an OPC package to w
 // and with its content initialized with r.
-// Parts comming from r cannot be modified but new parts can be appended
+//
+// The original package is not modified.
+// Parts coming from r cannot be modified but new parts can be appended
 // and package core properties and relationships can be updated.
 func NewWriterFromReader(w io.Writer, r *Reader) (*Writer, error) {
 	ow := NewWriter(w)
@@ -201,11 +203,11 @@ func (w *Writer) createLastPartRelationships() error {
 	if err := validateRelationships(w.last.Name, w.last.Relationships); err != nil {
 		return err
 	}
-	dirName := strings.Replace(filepath.Dir(w.last.Name), "\\", "/", -1)[1:]
+	dirName := path.Dir(w.last.Name)[1:]
 	if dirName != "" {
 		dirName = "/" + dirName
 	}
-	relName := fmt.Sprintf("%s/_rels/%s.rels", dirName, filepath.Base(w.last.Name))
+	relName := fmt.Sprintf("%s/_rels/%s.rels", dirName, path.Base(w.last.Name))
 	rw, err := w.addToPackage(&Part{Name: relName, ContentType: relationshipContentType}, CompressionNormal)
 	if err != nil {
 		return err

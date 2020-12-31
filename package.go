@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 )
@@ -152,7 +152,7 @@ func (c *contentTypes) add(partName, contentType string) error {
 	t, params, _ := mime.ParseMediaType(contentType)
 	contentType = mime.FormatMediaType(t, params)
 
-	ext := strings.ToLower(filepath.Ext(partName))
+	ext := strings.ToLower(path.Ext(partName))
 	if len(ext) == 0 {
 		c.addOverride(partName, contentType)
 		return nil
@@ -187,7 +187,7 @@ func (c *contentTypes) findType(name string) (string, error) {
 	if t, ok := c.overrides[strings.ToUpper(name)]; ok {
 		return t, nil
 	}
-	ext := filepath.Ext(name)
+	ext := path.Ext(name)
 	if ext != "" {
 		if t, ok := c.defaults[strings.ToLower(ext[1:])]; ok {
 			return t, nil
