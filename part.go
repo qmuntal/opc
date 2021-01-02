@@ -54,7 +54,7 @@ func NormalizePartName(name string) string {
 	if name == "" || name == "/" || name == "\\" || name == "." {
 		return ""
 	}
-	name, _ = split(name, '#', true)
+	name, _ = split(name, '#')
 	name = strings.NewReplacer("\\", "/", "//", "/").Replace(name)
 	name = unescape(name)
 	name = escape(name)
@@ -260,13 +260,10 @@ func unescape(s string) string {
 	return t.String()
 }
 
-func split(s string, sep byte, cutc bool) (string, string) {
+func split(s string, sep byte) (string, string) {
 	i := strings.IndexByte(s, sep)
 	if i < 0 {
 		return s, ""
-	}
-	if cutc {
-		return s[:i], s[i+1:]
 	}
 	return s[:i], s[i:]
 }

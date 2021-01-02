@@ -24,8 +24,7 @@ func Test_newPackage(t *testing.T) {
 	}{
 		{"base", &pkg{
 			parts: make(map[string]struct{}, 0),
-		},
-		},
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
