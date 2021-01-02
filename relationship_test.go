@@ -44,7 +44,9 @@ func TestRelationship_validate(t *testing.T) {
 	}{
 		{"relative", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "./two/two.txt", TargetMode: ModeExternal}, args{"/one.txt"}, false},
 		{"new", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "fakeTarget", TargetMode: ModeExternal}, args{""}, false},
-		{"abs", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "http://a.com/b", TargetMode: ModeExternal}, args{""}, false},
+		{"external", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "http://a.com/b", TargetMode: ModeExternal}, args{""}, false},
+		{"external1", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "://a.com/b", TargetMode: ModeInternal}, args{"/"}, false},
+		{"externalErr", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "http://a.com/b", TargetMode: ModeInternal}, args{"/"}, true},
 		{"internalRelRel", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "/_rels/.rels", TargetMode: ModeInternal}, args{"/"}, true},
 		{"internalRelNoSource", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "/fakeTarget", TargetMode: ModeInternal}, args{""}, true},
 		{"invalidTarget2", &Relationship{ID: "fakeId", Type: "fakeType", TargetURI: "  ", TargetMode: ModeInternal}, args{""}, true},

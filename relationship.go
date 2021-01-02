@@ -114,18 +114,17 @@ func isRelationshipURI(uri string) bool {
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
 func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
-	if !validEncoded(r.TargetURI, false) {
+	if !validEncoded(r.TargetURI, true) {
 		return newErrorRelationship(128, sourceURI, r.ID)
 	}
 	// ISO/IEC 29500-2 M1.29
 	if r.TargetMode == ModeInternal {
-		if !isInternal(sourceURI) {
+		if !isInternal(r.TargetURI) {
 			return newErrorRelationship(129, sourceURI, r.ID)
-		} else {
-			source := strings.TrimSpace(sourceURI)
-			if source == "" || isRelationshipURI(ResolveRelationship(sourceURI, r.TargetURI)) {
-				return newErrorRelationship(125, sourceURI, r.ID)
-			}
+		}
+		source := strings.TrimSpace(sourceURI)
+		if source == "" || isRelationshipURI(ResolveRelationship(sourceURI, r.TargetURI)) {
+			return newErrorRelationship(125, sourceURI, r.ID)
 		}
 	}
 

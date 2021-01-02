@@ -35,10 +35,8 @@ func (p *Part) validate() error {
 func ResolveRelationship(source string, rel string) string {
 	source = strings.Replace(source, "\\", "/", -1)
 	rel = strings.Replace(rel, "\\", "/", -1)
-	if source == "/" {
-		if !strings.HasPrefix(rel, "/") {
-			rel = "/" + rel
-		}
+	if source == "/" && !strings.HasPrefix(rel, "/") {
+		rel = "/" + rel
 	}
 	if !strings.HasPrefix(rel, "/") {
 		rel = fmt.Sprintf("%s/%s", path.Dir(source), rel)

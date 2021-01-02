@@ -112,7 +112,7 @@ func (r *Reader) loadPackage() error {
 				return err
 			}
 		} else {
-			cType, err := ct.findType(fileName)
+			cType, err := ct.findType(NormalizePartName(fileName))
 			if err != nil {
 				return err
 			}
@@ -252,7 +252,7 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 			}
 			ct.addDefault(ext, cDefault.ContentType)
 		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
-			partName := strings.ToUpper(cOverride.PartName)
+			partName := strings.ToUpper(NormalizePartName(cOverride.PartName))
 			if _, ok := ct.overrides[partName]; ok {
 				return nil, newError(205, partName)
 			}

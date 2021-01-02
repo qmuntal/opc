@@ -38,7 +38,7 @@ type Writer struct {
 // NewWriter returns a new Writer writing an OPC package to w.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{p: &pkg{
-		parts: make(map[string]*Part, 0),
+		parts: make(map[string]struct{}, 0),
 		contentTypes: contentTypes{
 			defaults: map[string]string{
 				"xml":  "application/xml",

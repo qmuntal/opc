@@ -8,9 +8,9 @@ import (
 )
 
 func createFakePackage(m ...string) *pkg {
-	parts := make(map[string]*Part, len(m))
+	parts := make(map[string]struct{}, len(m))
 	for _, s := range m {
-		parts[strings.ToUpper(s)] = new(Part)
+		parts[strings.ToUpper(s)] = struct{}{}
 	}
 	return &pkg{
 		parts: parts,
@@ -23,7 +23,7 @@ func Test_newPackage(t *testing.T) {
 		want *pkg
 	}{
 		{"base", &pkg{
-			parts: make(map[string]*Part, 0),
+			parts: make(map[string]struct{}, 0),
 		},
 		},
 	}
