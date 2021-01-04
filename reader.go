@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -112,7 +112,7 @@ func (r *Reader) loadPackage() error {
 				return err
 			}
 		} else {
-			cType, err := ct.findType(fileName)
+			cType, err := ct.findType(NormalizePartName(fileName))
 			if err != nil {
 				return err
 			}
@@ -179,9 +179,9 @@ func loadRelationships(file archiveFile, rels *relationshipsPart) error {
 		return err
 	}
 
-	// get part name from rels part
-	path := strings.Replace(filepath.Dir(filepath.Dir(file.Name())), `\`, "/", -1)
-	pname := "/" + path + "/" + strings.TrimSuffix(filepath.Base(file.Name()), filepath.Ext(file.Name()))
+	// get part name from rels parts
+	name := path.Dir(path.Dir(file.Name()))
+	pname := "/" + name + "/" + strings.TrimSuffix(path.Base(file.Name()), path.Ext(file.Name()))
 	pname = NormalizePartName(pname)
 	rels.addRelationship(pname, rls)
 	return nil
@@ -252,7 +252,7 @@ func decodeContentTypes(r io.Reader) (*contentTypes, error) {
 			}
 			ct.addDefault(ext, cDefault.ContentType)
 		} else if cOverride, ok := c.Value.(overrideContentTypeXML); ok {
-			partName := strings.ToUpper(cOverride.PartName)
+			partName := strings.ToUpper(NormalizePartName(cOverride.PartName))
 			if _, ok := ct.overrides[partName]; ok {
 				return nil, newError(205, partName)
 			}

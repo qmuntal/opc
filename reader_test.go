@@ -17,22 +17,17 @@ import (
 
 func Test_newReader(t *testing.T) {
 	p1 := newPackage()
-	p1.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
-	p1.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p1.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p1.parts["/DOCPROPS/APP.XML"] = struct{}{}
+	p1.parts["/PICTURES/PHOTO.PNG"] = struct{}{}
+	p1.parts["/FILES.XML"] = struct{}{}
 	p1.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p1.contentTypes.addDefault("png", "image/png")
 	p1.contentTypes.addDefault("xml", "application/xml")
 
 	p2 := newPackage()
-	p2.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-		Relationships: []*Relationship{
-			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
-		},
-	}
-	p2.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p2.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p2.parts["/DOCPROPS/APP.XML"] = struct{}{}
+	p2.parts["/PICTURES/PHOTO.PNG"] = struct{}{}
+	p2.parts["/FILES.XML"] = struct{}{}
 	p2.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p2.contentTypes.addDefault("xml", "application/xml")
 	p2.contentTypes.addDefault("png", "image/png")
@@ -127,7 +122,7 @@ func Test_newReader_File(t *testing.T) {
 				ioutil.NopCloser(bytes.NewBufferString(new(cTypeBuilder).withDefault("image/png", "png").String())),
 				nil,
 			),
-			newMockFile("pictures/../photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
+			newMockFile("pictures/./photo.png", ioutil.NopCloser(bytes.NewBufferString("")), nil),
 		}, 110},
 		{"emptySegment", []archiveFile{
 			newMockFile(
@@ -171,9 +166,9 @@ func Test_newReader_ContentType(t *testing.T) {
 </Types>`
 
 	p := newPackage()
-	p.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"}
-	p.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.PNG", ContentType: "image/png"}
-	p.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p.parts["/DOCPROPS/APP.XML"] = struct{}{}
+	p.parts["/PICTURES/PHOTO.PNG"] = struct{}{}
+	p.parts["/FILES.XML"] = struct{}{}
 	p.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p.contentTypes.addDefault("png", "image/png")
 	p.contentTypes.addDefault("xml", "application/xml")
@@ -280,36 +275,18 @@ func Test_newReader_ContentType(t *testing.T) {
 
 func Test_newReader_PartRelationships(t *testing.T) {
 	p3 := newPackage()
-	p3.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-		Relationships: []*Relationship{
-			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
-		},
-	}
-	p3.parts["/PICTURES/PHOTO.PNG"] = &Part{Name: "/pictures/photo.png", ContentType: "image/png"}
-	p3.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml", Relationships: []*Relationship{
-		{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-	}}
+	p3.parts["/DOCPROPS/APP.XML"] = struct{}{}
+	p3.parts["/PICTURES/PHOTO.PNG"] = struct{}{}
+	p3.parts["/FILES.XML"] = struct{}{}
 	p3.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p3.contentTypes.addDefault("xml", "application/xml")
 	p3.contentTypes.addDefault("png", "image/png")
 
 	p4 := newPackage()
-	p4.parts["/DOCPROPS/APP.XML"] = &Part{Name: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-		Relationships: []*Relationship{
-			{ID: "rel-1", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			{ID: "rel-2", Type: "text/txt", TargetURI: "/", TargetMode: ModeExternal},
-		},
-	}
-	p4.parts["/PICTURES/SEASON/SUMMER/PHOTO.PNG"] = &Part{Name: "/pictures/season/summer/photo.png", ContentType: "image/png",
-		Relationships: []*Relationship{
-			{ID: "rel-3", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			{ID: "rel-4", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-			{ID: "rel-5", Type: "text/txt", TargetURI: "/", TargetMode: ModeInternal},
-		},
-	}
-	p4.parts["/PICTURES/SUMMER/PHOTO2.PNG"] = &Part{Name: "/pictures/summer/photo2.png", ContentType: "image/png"}
-	p4.parts["/FILES.XML"] = &Part{Name: "/files.xml", ContentType: "application/xml"}
+	p4.parts["/DOCPROPS/APP.XML"] = struct{}{}
+	p4.parts["/PICTURES/SEASON/SUMMER/PHOTO.PNG"] = struct{}{}
+	p4.parts["/PICTURES/SUMMER/PHOTO2.PNG"] = struct{}{}
+	p4.parts["/FILES.XML"] = struct{}{}
 	p4.contentTypes.addOverride("/DOCPROPS/APP.XML", "application/vnd.openxmlformats-officedocument.extended-properties+xml")
 	p4.contentTypes.addDefault("xml", "application/xml")
 	p4.contentTypes.addDefault("png", "image/png")

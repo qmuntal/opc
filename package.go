@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 )
@@ -27,18 +27,18 @@ const (
 )
 
 type pkg struct {
-	parts        map[string]*Part
+	parts        map[string]struct{}
 	contentTypes contentTypes
 }
 
 func newPackage() *pkg {
 	return &pkg{
-		parts: make(map[string]*Part, 0),
+		parts: make(map[string]struct{}, 0),
 	}
 }
 
 func (p *pkg) partExists(partName string) bool {
-	_, ok := p.parts[strings.ToUpper(partName)]
+	_, ok := p.parts[partName]
 	return ok
 }
 
@@ -46,15 +46,19 @@ func (p *pkg) add(part *Part) error {
 	if err := part.validate(); err != nil {
 		return err
 	}
-	upperURI := strings.ToUpper(part.Name)
-	if p.partExists(upperURI) {
+	name := part.Name
+	if !strings.EqualFold(name, contentTypesName) {
+		name = NormalizePartName(part.Name)
+	}
+	name = strings.ToUpper(name)
+	if p.partExists(name) {
 		return newError(112, part.Name)
 	}
-	if p.checkPrefixCollision(upperURI) {
+	if p.checkPrefixCollision(name) {
 		return newError(111, part.Name)
 	}
-	p.contentTypes.add(part.Name, part.ContentType)
-	p.parts[upperURI] = part
+	p.contentTypes.add(name, part.ContentType)
+	p.parts[name] = struct{}{}
 	return nil
 }
 
@@ -152,7 +156,7 @@ func (c *contentTypes) add(partName, contentType string) error {
 	t, params, _ := mime.ParseMediaType(contentType)
 	contentType = mime.FormatMediaType(t, params)
 
-	ext := strings.ToLower(filepath.Ext(partName))
+	ext := strings.ToLower(path.Ext(partName))
 	if len(ext) == 0 {
 		c.addOverride(partName, contentType)
 		return nil
@@ -187,7 +191,7 @@ func (c *contentTypes) findType(name string) (string, error) {
 	if t, ok := c.overrides[strings.ToUpper(name)]; ok {
 		return t, nil
 	}
-	ext := filepath.Ext(name)
+	ext := path.Ext(name)
 	if ext != "" {
 		if t, ok := c.defaults[strings.ToLower(ext[1:])]; ok {
 			return t, nil

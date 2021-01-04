@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"net/url"
 	"strings"
 )
 
@@ -21,7 +20,6 @@ const (
 )
 
 const externalMode = "External"
-const charBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
 
 // Relationship is used to express a relationship between a source and a target part.
 // If the ID is not specified a unique ID will be generated following the pattern rIdN.
@@ -116,20 +114,17 @@ func isRelationshipURI(uri string) bool {
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
 func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
-	uri, err := url.Parse(strings.TrimSpace(r.TargetURI))
-	if err != nil || uri.String() == "" {
+	if !validEncoded(r.TargetURI) {
 		return newErrorRelationship(128, sourceURI, r.ID)
 	}
-
 	// ISO/IEC 29500-2 M1.29
 	if r.TargetMode == ModeInternal {
-		if uri.IsAbs() {
+		if !isInternal(r.TargetURI) {
 			return newErrorRelationship(129, sourceURI, r.ID)
-		} else {
-			source, err := url.Parse(strings.TrimSpace(sourceURI))
-			if err != nil || source.String() == "" || isRelationshipURI(source.ResolveReference(uri).String()) {
-				return newErrorRelationship(125, sourceURI, r.ID)
-			}
+		}
+		source := strings.TrimSpace(sourceURI)
+		if source == "" || isRelationshipURI(ResolveRelationship(sourceURI, r.TargetURI)) {
+			return newErrorRelationship(125, sourceURI, r.ID)
 		}
 	}
 
@@ -197,4 +192,28 @@ func (rp *relationshipsPart) addRelationship(name string, r []*Relationship) {
 		rp.relation = make(map[string][]*Relationship)
 	}
 	rp.relation[strings.ToUpper(name)] = r
+}
+
+func isInternal(rawurl string) bool {
+	for i := 0; i < len(rawurl); i++ {
+		c := rawurl[i]
+		switch {
+		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z':
+		// do nothing
+		case '0' <= c && c <= '9' || c == '+' || c == '-' || c == '.':
+			if i == 0 {
+				return true
+			}
+		case c == ':':
+			if i == 0 {
+				return true
+			}
+			return false
+		default:
+			// we have encountered an invalid character,
+			// so there is no valid scheme
+			return true
+		}
+	}
+	return true
 }

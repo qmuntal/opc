@@ -28,11 +28,11 @@ func TestWriter_Close(t *testing.T) {
 	p.contentTypes.add("/a.xml", "a/b")
 	p.contentTypes.add("/b.xml", "c/d")
 	pC := newPackage()
-	pC.parts["/[CONTENT_TYPES].XML"] = new(Part)
+	pC.parts["/[CONTENT_TYPES].XML"] = struct{}{}
 	pCore := newPackage()
-	pCore.parts["/PROPS/CORE.XML"] = new(Part)
+	pCore.parts["/PROPS/CORE.XML"] = struct{}{}
 	pRel := newPackage()
-	pRel.parts["/_RELS/.RELS"] = new(Part)
+	pRel.parts["/_RELS/.RELS"] = struct{}{}
 	tests := []struct {
 		name    string
 		w       *Writer
@@ -136,7 +136,7 @@ func TestWriter_CreatePart(t *testing.T) {
 	rel := &Relationship{ID: "fakeId", Type: "asd", TargetURI: "/fakeTarget", TargetMode: ModeInternal}
 	w := NewWriter(&bytes.Buffer{})
 	pRel := newPackage()
-	pRel.parts["/_RELS/A.XML.RELS"] = new(Part)
+	pRel.parts["/_RELS/A.XML.RELS"] = struct{}{}
 	type args struct {
 		part        *Part
 		compression CompressionOption
@@ -147,6 +147,7 @@ func TestWriter_CreatePart(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{"unicode", NewWriter(&bytes.Buffer{}), args{&Part{"/a/ц.xml", "a/b", nil}, CompressionNone}, false},
 		{"fhErr", NewWriter(&bytes.Buffer{}), args{&Part{"/a.xml", "a/b", nil}, -3}, true},
 		{"nameErr", NewWriter(&bytes.Buffer{}), args{&Part{"a.xml", "a/b", nil}, CompressionNone}, true},
 		{"failRel", &Writer{w: zip.NewWriter(nil), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, args{&Part{"/a.xml", "a/b", nil}, CompressionNone}, true},
