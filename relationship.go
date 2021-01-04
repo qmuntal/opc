@@ -114,7 +114,7 @@ func isRelationshipURI(uri string) bool {
 
 // validateRelationshipTarget checks that a relationship target follows the constrains specified in the ISO/IEC 29500-2 §9.3.
 func (r *Relationship) validateRelationshipTarget(sourceURI string) error {
-	if !validEncoded(r.TargetURI, true) {
+	if !validEncoded(r.TargetURI) {
 		return newErrorRelationship(128, sourceURI, r.ID)
 	}
 	// ISO/IEC 29500-2 M1.29

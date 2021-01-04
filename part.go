@@ -99,7 +99,7 @@ func validatePartName(name string) error {
 		return err
 	}
 
-	if !validEncoded(name, true) {
+	if !validEncoded(name) {
 		return newError(106, name)
 	}
 	return nil
@@ -332,7 +332,7 @@ func unpct(c1, c2 byte) byte {
 	return unhex(c1)<<4 | unhex(c2)
 }
 
-func validEncoded(s string, allowIRI bool) bool {
+func validEncoded(s string) bool {
 	for i := 0; i < len(s); i++ {
 		switch s[i] {
 		case '%':
@@ -342,9 +342,7 @@ func validEncoded(s string, allowIRI bool) bool {
 			// ok
 		default:
 			if shouldEscape(s[i]) {
-				if !allowIRI {
-					return false
-				}
+				// Check if IRI supported shar
 				r, wid := utf8.DecodeRuneInString(s[i:])
 				if !isUcsChar(r) {
 					return false
