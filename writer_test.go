@@ -27,8 +27,6 @@ func TestWriter_Close(t *testing.T) {
 	p := newPackage()
 	p.contentTypes.add("/a.xml", "a/b")
 	p.contentTypes.add("/b.xml", "c/d")
-	pC := newPackage()
-	pC.parts["/[CONTENT_TYPES].XML"] = struct{}{}
 	pCore := newPackage()
 	pCore.parts["/PROPS/CORE.XML"] = struct{}{}
 	pRel := newPackage()
@@ -39,7 +37,6 @@ func TestWriter_Close(t *testing.T) {
 		wantErr bool
 	}{
 		{"base", NewWriter(&bytes.Buffer{}), false},
-		{"invalidContentType", &Writer{p: pC, w: zip.NewWriter(&bytes.Buffer{})}, true},
 		{"withCt", &Writer{p: p, w: zip.NewWriter(&bytes.Buffer{})}, false},
 		{"invalidPartRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), last: &Part{Name: "/b.xml", Relationships: []*Relationship{{}}}}, true},
 		{"invalidOwnRel", &Writer{p: newPackage(), w: zip.NewWriter(&bytes.Buffer{}), Relationships: []*Relationship{{}}}, true},

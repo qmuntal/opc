@@ -46,11 +46,7 @@ func (p *pkg) add(part *Part) error {
 	if err := part.validate(); err != nil {
 		return err
 	}
-	name := part.Name
-	if !strings.EqualFold(name, contentTypesName) {
-		name = NormalizePartName(part.Name)
-	}
-	name = strings.ToUpper(name)
+	name := strings.ToUpper(NormalizePartName(part.Name))
 	if p.partExists(name) {
 		return newError(112, part.Name)
 	}

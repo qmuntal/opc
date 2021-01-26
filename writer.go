@@ -41,7 +41,6 @@ func NewWriter(w io.Writer) *Writer {
 		parts: make(map[string]struct{}, 0),
 		contentTypes: contentTypes{
 			defaults: map[string]string{
-				"xml":  "application/xml",
 				"rels": relationshipContentType,
 			},
 			overrides: map[string]string{},
@@ -165,7 +164,12 @@ func (w *Writer) createCoreProperties() error {
 
 func (w *Writer) createContentTypes() error {
 	// ISO/IEC 29500-2 M3.10
-	cw, err := w.addToPackage(&Part{Name: contentTypesName, ContentType: "application/xml"}, CompressionNormal)
+	fh := &zip.FileHeader{
+		Name:     zipName(contentTypesName),
+		Modified: time.Now(),
+	}
+	w.setCompressor(fh, CompressionNormal)
+	cw, err := w.w.CreateHeader(fh)
 	if err != nil {
 		return err
 	}
