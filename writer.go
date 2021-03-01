@@ -116,7 +116,7 @@ func (w *Writer) Close() error {
 // This returns a Writer to which the file contents should be written.
 // The file's contents must be written to the io.Writer before the next call to Create, CreatePart, or Close.
 func (w *Writer) Create(name, contentType string) (io.Writer, error) {
-	return w.CreatePart(&Part{Name: name, ContentType: contentType}, CompressionNone)
+	return w.CreatePart(&Part{Name: name, ContentType: contentType}, CompressionNormal)
 }
 
 // CreatePart adds a file to the OPC archive using the provided part.
