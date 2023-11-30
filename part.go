@@ -193,8 +193,9 @@ func escape(s string) string {
 				t[j+2] = '5'
 				j += 3
 			} else {
-				t[j], t[j+1], t[j+3] = '%', s[i+1], s[i+2]
+				t[j], t[j+1], t[j+2] = '%', s[i+1], s[i+2]
 				j += 3
+				i += 2
 			}
 		default:
 			c := s[i]

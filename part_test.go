@@ -33,6 +33,7 @@ func TestNormalizePartName(t *testing.T) {
 		{"percentSign2", args{"/docs%25/%41.xml"}, "/docs%25/A.xml"},
 		{"percentSignEnd", args{"/docs/a.%"}, "/docs/a.%25"},
 		{"pre-encoded", args{"/%3Aa.xml"}, "/%3Aa.xml"},
+		{"pre-encodedMixedWithNecessaryEscaped", args{"/%28a a.xml"}, "/%28a%20a.xml"},
 		{"chinese", args{"/传/傳.xml"}, "/%E4%BC%A0/%E5%82%B3.xml"},
 		{"fromSpec1", args{"/a/b.xml"}, "/a/b.xml"},
 		{"fromSpec2", args{"/a/ц.xml"}, "/a/%D1%86.xml"},
