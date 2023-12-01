@@ -92,7 +92,7 @@ func TestPart_validate(t *testing.T) {
 		{"mediaLinearEnd", &Part{"/a.txt", "TEXT/html; charset=ISO-8859-4;q=2/t", nil}, true},
 		{"invalidMediaParams", &Part{"/a.txt", "TEXT/html; charset=ISO-8859-4 q=2", nil}, true},
 		{"mediaParamNoName", &Part{"/a.txt", "TEXT/html; =ISO-8859-4", nil}, true},
-		{"duplicateParamName", &Part{"/a.txt", "TEXT/html; charset=ISO-8859-4; charset=ISO-8859-4", nil}, true},
+		{"duplicatedMedia", &Part{"/a.txt", "TEXT/html; charset=ISO-8859-4; charset=UTF-8", nil}, true},
 		{"linearSpace", &Part{"/a.txt", "TEXT/t/html; charset=ISO-8859-4;q=2", nil}, true},
 		{"whiteSpace", &Part{"/a.txt", "TEXT /html; charset=ISO-8859-4;q=2", nil}, true},
 		{"noSlash", &Part{"/a.txt", "application", nil}, true},
